@@ -18,7 +18,7 @@
       </li>
 
       <li class="nav-item">
-        <a class="nav-link" href="/boars/list.php">
+        <a class="nav-link" href="<?= BASE_URL ?>/boars/list.php">
           🐗 Boars
         </a>
       </li>
