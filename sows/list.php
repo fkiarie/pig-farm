@@ -3,9 +3,7 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/header.php';
 
 $result = $conn->query("
-    SELECT *
-    FROM sows
-    ORDER BY created_at DESC
+   SELECT * FROM sows WHERE status != 'Culled' ORDER BY created_at DESC
 ");
 ?>
 
@@ -24,6 +22,7 @@ $result = $conn->query("
                     <th>Status</th>
                     <th>Date of Birth</th>
                     <th>Added</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -42,6 +41,13 @@ $result = $conn->query("
                             </td>
                             <td><?= $row['date_of_birth'] ?? '-' ?></td>
                             <td><?= date('M d, Y', strtotime($row['created_at'])) ?></td>
+                            <td class="text-center"><a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a href="cull.php?id=<?= $row['id'] ?>"
+   class="btn btn-sm btn-outline-danger"
+   onclick="return confirm('Mark this sow as culled?');">
+   Cull
+</a>
+                                </td>
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
