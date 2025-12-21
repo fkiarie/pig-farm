@@ -41,12 +41,11 @@ $result = $conn->query("
                             </td>
                             <td><?= $row['date_of_birth'] ?? '-' ?></td>
                             <td><?= date('M d, Y', strtotime($row['created_at'])) ?></td>
-                            <td class="text-center"><a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                            <a href="cull.php?id=<?= $row['id'] ?>"
-   class="btn btn-sm btn-outline-danger"
-   onclick="return confirm('Mark this sow as culled?');">
-   Cull
-</a>
+                            <td class="text-center">
+                                <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a href="cull.php?id=<?= $row['id'] ?>"class="btn btn-sm btn-outline-danger"onclick="return confirm('Mark this sow as culled?');">Cull</a>
+                                <a href="profile.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-outline-secondary">Profile</a>
+                        
                                 </td>
                         </tr>
                     <?php endwhile; ?>
