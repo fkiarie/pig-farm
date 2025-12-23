@@ -22,7 +22,7 @@ $sow = $result->fetch_assoc();
             <input type="hidden" name="id" value="<?= $sow['id'] ?>">
 
             <div class="mb-3">
-                <label class="form-label">Tag Number *</label>
+                <label class="form-label">Name *</label>
                 <input type="text" name="tag_no" class="form-control"
                        value="<?= htmlspecialchars($sow['tag_no']) ?>" required>
             </div>

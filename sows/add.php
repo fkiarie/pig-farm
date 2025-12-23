@@ -9,7 +9,7 @@ require_once __DIR__ . '/../includes/header.php';
         <form method="POST" action="store.php">
 
             <div class="mb-3">
-                <label class="form-label">Tag Number *</label>
+                <label class="form-label">Name *</label>
                 <input type="text" name="tag_no" class="form-control" required>
             </div>
 

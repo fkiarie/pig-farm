@@ -66,7 +66,7 @@ $servings = $conn->query("
     <div class="card-body">
         <div class="row g-3">
             <div class="col-6 col-md-3">
-                <strong>Tag No</strong><br>
+                <strong>Name</strong><br>
                 <?= htmlspecialchars($sow['tag_no']) ?>
             </div>
             <div class="col-6 col-md-3">
