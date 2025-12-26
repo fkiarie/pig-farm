@@ -30,7 +30,7 @@
       </li>
 
       <li class="nav-item">
-        <a class="nav-link" href="/breeding/farrowing.php">
+        <a class="nav-link" href="<?= BASE_URL ?>/farrowing/list.php">
           🐣 Farrowing
         </a>
       </li>
