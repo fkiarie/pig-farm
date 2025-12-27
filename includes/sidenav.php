@@ -6,7 +6,7 @@
     <ul class="nav flex-column">
 
       <li class="nav-item">
-        <a class="nav-link active" href="/index.php">
+        <a class="nav-link active" href="<?= BASE_URL ?>/index.php">
           📊 Dashboard
         </a>
       </li>
@@ -35,8 +35,15 @@
         </a>
       </li>
 
+      <!-- ✅ NEW: Weaning -->
       <li class="nav-item">
-        <a class="nav-link" href="/activities/list.php">
+        <a class="nav-link" href="<?= BASE_URL ?>/weaning/list.php">
+          🍼 Weaning
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" href="<?= BASE_URL ?>/activities/list.php">
           📝 Daily Activities
         </a>
       </li>
