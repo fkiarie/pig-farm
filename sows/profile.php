@@ -97,7 +97,7 @@ $servings = $conn->query("
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>📅 Serving History</span>
-        <a href="../servings/create.php?sow_id=<?= $sow['id'] ?>"
+        <a href="<?= BASE_URL ?>/serving/list.php?sow_id=<?= $sow['id'] ?>"
            class="btn btn-sm btn-success">
            + Record Serving
         </a>
