@@ -279,7 +279,7 @@ $servings = $conn->query($query);
                             
                             <td>
                                 <div class="btn-group d-flex justify-content-end" role="group">
-                                    <a href="view.php?id=<?= $row['id'] ?>"
+                                    <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['id'] ?>"
                                        class="btn btn-sm btn-outline-success"
                                        data-bs-toggle="tooltip"
                                        title="View serving details">
@@ -287,7 +287,7 @@ $servings = $conn->query($query);
                                        <span class="d-inline d-lg-none">👁️</span>
                                     </a>
                                     <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                        <a href="../breeding/farrowing.php?serving_id=<?= $row['id'] ?>"
+                                        <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['id'] ?>"
                                            class="btn btn-sm btn-outline-primary"
                                            data-bs-toggle="tooltip"
                                            title="Record farrowing">
