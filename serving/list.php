@@ -66,7 +66,7 @@ $servings = $conn->query($query);
             </div>
         </div>
     </div>
-    
+
     <div class="col-6 col-lg">
         <div class="card stat-card">
             <div class="card-body">
@@ -77,7 +77,7 @@ $servings = $conn->query($query);
             </div>
         </div>
     </div>
-    
+
     <div class="col-6 col-lg">
         <div class="card stat-card">
             <div class="card-body">
@@ -88,7 +88,7 @@ $servings = $conn->query($query);
             </div>
         </div>
     </div>
-    
+
     <div class="col-6 col-lg">
         <div class="card stat-card">
             <div class="card-body">
@@ -99,7 +99,7 @@ $servings = $conn->query($query);
             </div>
         </div>
     </div>
-    
+
     <div class="col-6 col-lg">
         <div class="card stat-card">
             <div class="card-body">
@@ -118,10 +118,7 @@ $servings = $conn->query($query);
         <div class="row g-3 align-items-end">
             <div class="col-12 col-md-4 col-lg-3">
                 <label for="searchServing" class="form-label">Search</label>
-                <input type="text" 
-                       class="form-control" 
-                       id="searchServing" 
-                       placeholder="Search by sow or boar...">
+                <input type="text" class="form-control" id="searchServing" placeholder="Search by sow or boar...">
             </div>
             <div class="col-12 col-md-3 col-lg-2">
                 <label for="filterMethod" class="form-label">Method</label>
@@ -191,16 +188,15 @@ $servings = $conn->query($query);
                         $farrowingDate = new DateTime($row['expected_farrowing']);
                         $daysUntil = $today->diff($farrowingDate)->days;
                         $isPast = $today > $farrowingDate;
-                        
+
                         // Check if farrowing is soon (within 7 days)
                         $isSoon = !$isPast && $daysUntil <= 7;
                         ?>
-                        <tr class="serving-row" 
-                            data-sow="<?= strtolower(htmlspecialchars($row['sow_tag'])) ?>"
+                        <tr class="serving-row" data-sow="<?= strtolower(htmlspecialchars($row['sow_tag'])) ?>"
                             data-boar="<?= strtolower(htmlspecialchars($row['boar_name'])) ?>"
                             data-method="<?= $row['method'] ?>"
                             data-status="<?= $row['sow_status'] === 'Pregnant' ? 'Pregnant' : 'Completed' ?>">
-                            
+
                             <td>
                                 <div>
                                     <strong class="d-block"><?= date('d M Y', strtotime($row['serving_date'])) ?></strong>
@@ -213,7 +209,7 @@ $servings = $conn->query($query);
                                     </small>
                                 </div>
                             </td>
-                            
+
                             <td>
                                 <div class="d-flex align-items-center">
                                     <span class="emoji-icon me-2">🐷</span>
@@ -223,24 +219,24 @@ $servings = $conn->query($query);
                                     <span class="emoji-icon">🐗</span> <?= htmlspecialchars($row['boar_name']) ?>
                                 </small>
                             </td>
-                            
+
                             <td class="d-none d-md-table-cell">
                                 <div class="d-flex align-items-center">
                                     <span class="emoji-icon me-2">🐗</span>
                                     <?= htmlspecialchars($row['boar_name']) ?>
                                 </div>
                             </td>
-                            
+
                             <td class="d-none d-lg-table-cell">
                                 <?php
                                 $methodIcon = $row['method'] === 'Natural' ? '🐗' : '🔬';
                                 $methodClass = $row['method'] === 'Natural' ? 'success' : 'info';
                                 ?>
                                 <span class="badge bg-<?= $methodClass ?>">
-                                    <?= $methodIcon ?> <?= $row['method'] ?>
+                                    <?= $methodIcon ?>         <?= $row['method'] ?>
                                 </span>
                             </td>
-                            
+
                             <td class="d-none d-xl-table-cell">
                                 <div>
                                     <strong class="d-block"><?= date('d M Y', strtotime($row['expected_farrowing'])) ?></strong>
@@ -257,7 +253,7 @@ $servings = $conn->query($query);
                                     <?php endif; ?>
                                 </div>
                             </td>
-                            
+
                             <td>
                                 <?php if ($row['sow_status'] === 'Pregnant'): ?>
                                     <span class="badge bg-warning">
@@ -278,23 +274,21 @@ $servings = $conn->query($query);
                                     </span>
                                 <?php endif; ?>
                             </td>
-                            
+
                             <td>
                                 <div class="btn-group d-flex justify-content-end" role="group">
                                     <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>"
-   class="btn btn-sm btn-outline-success"
-   data-bs-toggle="tooltip"
-   title="View sow profile">
-   <span class="d-none d-lg-inline">View Sow</span>
-   <span class="d-inline d-lg-none">🐷</span>
-</a>
+                                        class="btn btn-sm btn-outline-success" data-bs-toggle="tooltip"
+                                        title="View sow profile">
+                                        <span class="d-none d-lg-inline">View Sow</span>
+                                        <span class="d-inline d-lg-none">🐷</span>
+                                    </a>
                                     <?php if ($row['sow_status'] === 'Pregnant'): ?>
                                         <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>"
-                                           class="btn btn-sm btn-outline-primary"
-                                           data-bs-toggle="tooltip"
-                                           title="Record farrowing">
-                                           <span class="d-none d-lg-inline">Record Birth</span>
-                                           <span class="d-inline d-lg-none">🐣</span>
+                                            class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip"
+                                            title="Record farrowing">
+                                            <span class="d-none d-lg-inline">Record Birth</span>
+                                            <span class="d-inline d-lg-none">🐣</span>
                                         </a>
                                     <?php endif; ?>
                                 </div>
@@ -336,50 +330,50 @@ $servings = $conn->query($query);
 
 <!-- Search/Filter JavaScript -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchServing');
-    const methodFilter = document.getElementById('filterMethod');
-    const statusFilter = document.getElementById('filterStatus');
-    const tableRows = document.querySelectorAll('.serving-row');
-    const recordCount = document.getElementById('recordCount');
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchServing');
+        const methodFilter = document.getElementById('filterMethod');
+        const statusFilter = document.getElementById('filterStatus');
+        const tableRows = document.querySelectorAll('.serving-row');
+        const recordCount = document.getElementById('recordCount');
 
-    function filterTable() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const methodValue = methodFilter.value;
-        const statusValue = statusFilter.value;
-        let visibleCount = 0;
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const methodValue = methodFilter.value;
+            const statusValue = statusFilter.value;
+            let visibleCount = 0;
 
-        tableRows.forEach(row => {
-            const sow = row.dataset.sow;
-            const boar = row.dataset.boar;
-            const method = row.dataset.method;
-            const status = row.dataset.status;
+            tableRows.forEach(row => {
+                const sow = row.dataset.sow;
+                const boar = row.dataset.boar;
+                const method = row.dataset.method;
+                const status = row.dataset.status;
 
-            const matchesSearch = sow.includes(searchTerm) || boar.includes(searchTerm);
-            const matchesMethod = !methodValue || method === methodValue;
-            const matchesStatus = !statusValue || status === statusValue;
+                const matchesSearch = sow.includes(searchTerm) || boar.includes(searchTerm);
+                const matchesMethod = !methodValue || method === methodValue;
+                const matchesStatus = !statusValue || status === statusValue;
 
-            if (matchesSearch && matchesMethod && matchesStatus) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
+                if (matchesSearch && matchesMethod && matchesStatus) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Update record count
+            if (recordCount) {
+                recordCount.textContent = visibleCount + ' record' + (visibleCount !== 1 ? 's' : '');
             }
-        });
 
-        // Update record count
-        if (recordCount) {
-            recordCount.textContent = visibleCount + ' record' + (visibleCount !== 1 ? 's' : '');
-        }
-
-        // Show/hide no results message
-        const noResultsRow = document.querySelector('.no-results');
-        if (visibleCount === 0 && tableRows.length > 0) {
-            if (!noResultsRow) {
-                const tbody = document.querySelector('#servingsTable tbody');
-                const tr = document.createElement('tr');
-                tr.className = 'no-results';
-                tr.innerHTML = `
+            // Show/hide no results message
+            const noResultsRow = document.querySelector('.no-results');
+            if (visibleCount === 0 && tableRows.length > 0) {
+                if (!noResultsRow) {
+                    const tbody = document.querySelector('#servingsTable tbody');
+                    const tr = document.createElement('tr');
+                    tr.className = 'no-results';
+                    tr.innerHTML = `
                     <td colspan="7" class="text-center py-5">
                         <div class="text-muted">
                             <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🔍</span>
@@ -388,34 +382,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </td>
                 `;
-                tbody.appendChild(tr);
+                    tbody.appendChild(tr);
+                }
+            } else if (noResultsRow && visibleCount > 0) {
+                noResultsRow.remove();
             }
-        } else if (noResultsRow && visibleCount > 0) {
-            noResultsRow.remove();
         }
-    }
 
-    // Event listeners
-    if (searchInput) {
-        searchInput.addEventListener('input', filterTable);
-    }
+        // Event listeners
+        if (searchInput) {
+            searchInput.addEventListener('input', filterTable);
+        }
 
-    if (methodFilter) {
-        methodFilter.addEventListener('change', filterTable);
-    }
+        if (methodFilter) {
+            methodFilter.addEventListener('change', filterTable);
+        }
 
-    if (statusFilter) {
-        statusFilter.addEventListener('change', filterTable);
-    }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterTable);
+        }
 
-    // Reset filters function
-    window.resetFilters = function() {
-        searchInput.value = '';
-        methodFilter.value = '';
-        statusFilter.value = '';
-        filterTable();
-    };
-});
+        // Reset filters function
+        window.resetFilters = function () {
+            searchInput.value = '';
+            methodFilter.value = '';
+            statusFilter.value = '';
+            filterTable();
+        };
+    });
 </script>
 
 <?php require_once '../includes/footer.php'; ?>
