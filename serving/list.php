@@ -23,10 +23,11 @@ $stats = $conn->query("
 // Fetch all servings with sow & boar info
 $query = "
     SELECT 
-        sv.id,
+        sv.id AS serving_id,
         sv.serving_date,
         sv.expected_farrowing,
         sv.method,
+        s.id AS sow_id,
         s.tag_no AS sow_tag,
         s.status AS sow_status,
         b.name AS boar_name
@@ -35,6 +36,7 @@ $query = "
     JOIN boars b ON sv.boar_id = b.id
     ORDER BY sv.serving_date DESC
 ";
+
 
 $servings = $conn->query($query);
 ?>
@@ -177,7 +179,7 @@ $servings = $conn->query($query);
                                 <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">❤️</span>
                                 <h5>No serving records found</h5>
                                 <p class="mb-3">Start by recording your first breeding.</p>
-                                <a href="serve.php" class="btn btn-success">+ Record First Serving</a>
+                                <a href="add.php" class="btn btn-success">+ Record First Serving</a>
                             </div>
                         </td>
                     </tr>
@@ -279,15 +281,15 @@ $servings = $conn->query($query);
                             
                             <td>
                                 <div class="btn-group d-flex justify-content-end" role="group">
-                                    <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['id'] ?>"
-                                       class="btn btn-sm btn-outline-success"
-                                       data-bs-toggle="tooltip"
-                                       title="View serving details">
-                                       <span class="d-none d-lg-inline">View Details</span>
-                                       <span class="d-inline d-lg-none">👁️</span>
-                                    </a>
+                                    <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>"
+   class="btn btn-sm btn-outline-success"
+   data-bs-toggle="tooltip"
+   title="View sow profile">
+   <span class="d-none d-lg-inline">View Sow</span>
+   <span class="d-inline d-lg-none">🐷</span>
+</a>
                                     <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                        <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['id'] ?>"
+                                        <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>"
                                            class="btn btn-sm btn-outline-primary"
                                            data-bs-toggle="tooltip"
                                            title="Record farrowing">
