@@ -33,6 +33,21 @@ body {
   background-color: #e7f5ec;
   border-left: 3px solid #198754;
 }
+.sidebar .nav-link {
+    color: #333;
+    font-weight: 500;
+}
+
+.sidebar .nav-link.active {
+    background-color: #198754; /* Bootstrap success */
+    color: #fff;
+    border-radius: 0.375rem;
+}
+
+.sidebar .nav-link.active i {
+    color: #fff;
+}
+
 
 /* Main content area */
 main {

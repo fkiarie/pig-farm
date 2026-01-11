@@ -12,6 +12,8 @@ require_once __DIR__ . '/../auth/auth_check.php';
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/css/bootstrap.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
     
     <!-- Custom Dashboard CSS -->
     <link rel="stylesheet" href="<?= BASE_URL ?>/main/dashboard.css">
