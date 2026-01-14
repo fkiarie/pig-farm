@@ -97,7 +97,7 @@ $overdueCount = $conn->query("
 <div class="alert alert-warning alert-dismissible fade show" role="alert">
     <strong>⚠️ Attention Required!</strong> 
     You have <?= $overdueCount ?> overdue farrowing<?= $overdueCount > 1 ? 's' : '' ?>. 
-    <a href="/breeding/serve.php" class="alert-link">View details</a>
+    <a href="<?= BASE_URL ?>/serving/list.php" class="alert-link">View details</a>
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 <?php endif; ?>
