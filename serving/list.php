@@ -8,7 +8,21 @@ require_once '../includes/header.php';
 
 /*
 |--------------------------------------------------------------------------
-| Fetch All Servings
+| Pagination Setup
+|--------------------------------------------------------------------------
+*/
+$limit = 10;
+$page  = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$offset = ($page - 1) * $limit;
+
+// Total records
+$totalResult = $conn->query("SELECT COUNT(*) AS total FROM servings");
+$totalRows = $totalResult->fetch_assoc()['total'];
+$totalPages = ceil($totalRows / $limit);
+
+/*
+|--------------------------------------------------------------------------
+| Fetch Servings
 |--------------------------------------------------------------------------
 */
 $query = "
@@ -25,60 +39,55 @@ $query = "
     JOIN sows s ON sv.sow_id = s.id
     JOIN boars b ON sv.boar_id = b.id
     ORDER BY sv.serving_date DESC
+    LIMIT $limit OFFSET $offset
 ";
 
 $servings = $conn->query($query);
 ?>
 
 <!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Breeding Records</h1>
-    <a href="add.php" class="btn btn-success">+ Record New Serving</a>
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h3 mb-0">Breeding Records</h1>
+    <a href="add.php" class="btn btn-success btn-sm">+ Record Serving</a>
 </div>
 
-<!-- Filter Section -->
+<!-- Filters -->
 <div class="card mb-4">
     <div class="card-body">
-        <div class="row g-3 align-items-end">
+        <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Search</label>
-                <input type="text" class="form-control" id="searchServing" placeholder="Search by sow or boar">
+                <input type="text" id="searchServing" class="form-control" placeholder="Search sow or boar">
             </div>
             <div class="col-md-3">
-                <label class="form-label">Method</label>
-                <select class="form-select" id="filterMethod">
-                    <option value="">All</option>
+                <select id="filterMethod" class="form-select">
+                    <option value="">All Methods</option>
                     <option value="Natural">Natural</option>
                     <option value="AI">AI</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" id="filterStatus">
-                    <option value="">All</option>
+                <select id="filterStatus" class="form-select">
+                    <option value="">All Status</option>
                     <option value="Pregnant">Pregnant</option>
                     <option value="Completed">Completed</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" onclick="resetFilters()">Reset</button>
+                <button onclick="resetFilters()" class="btn btn-outline-secondary w-100">
+                    Reset
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Servings Table -->
+<!-- Table -->
 <div class="card">
-    <div class="card-header d-flex justify-content-between">
-        <span>Serving Records</span>
-        <span class="badge bg-secondary" id="recordCount"><?= $servings->num_rows ?> records</span>
-    </div>
-
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0" id="servingsTable">
-            <thead>
+            <thead class="table-light">
                 <tr>
-                    <th>Serving Date</th>
+                    <th>Date</th>
                     <th>Sow</th>
                     <th class="d-none d-md-table-cell">Boar</th>
                     <th class="d-none d-lg-table-cell">Method</th>
@@ -91,8 +100,8 @@ $servings = $conn->query($query);
 
             <?php if ($servings->num_rows === 0): ?>
                 <tr>
-                    <td colspan="7" class="text-center py-5 text-muted">
-                        No serving records found.
+                    <td colspan="7" class="text-center text-muted py-4">
+                        No serving records found
                     </td>
                 </tr>
             <?php else: ?>
@@ -111,35 +120,33 @@ $servings = $conn->query($query);
                         data-method="<?= $row['method'] ?>"
                         data-status="<?= $row['sow_status'] === 'Pregnant' ? 'Pregnant' : 'Completed' ?>">
 
-                        <!-- Serving Date -->
+                        <!-- Date + Mobile Farrowing -->
                         <td>
                             <strong><?= date('d M Y', strtotime($row['serving_date'])) ?></strong>
-                        </td>
 
-                        <!-- Sow + MOBILE Farrowing Info -->
-                        <td>
-                            🐷 <strong><?= htmlspecialchars($row['sow_tag']) ?></strong>
-
-                            <!-- MOBILE ONLY: Expected Farrowing -->
-                            <div class="d-md-none mt-1">
-                                <small class="text-muted d-block">
-                                    🐣 <?= date('d M Y', strtotime($row['expected_farrowing'])) ?>
+                            <!-- ✅ MOBILE FARROWING DATE -->
+                            <div class="d-xl-none mt-1">
+                                <small class="text-muted">
+                                    Farrow: <?= date('d M Y', strtotime($row['expected_farrowing'])) ?>
                                 </small>
-
                                 <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                    <small class="<?= $isPast || $isSoon ? 'text-danger fw-bold' : 'text-muted' ?>">
-                                        <?= $isPast ? 'Overdue' : $daysUntil . ' days remaining' ?>
-                                    </small>
+                                    <div>
+                                        <small class="<?= $isSoon || $isPast ? 'text-danger fw-bold' : 'text-muted' ?>">
+                                            <?= $isPast ? 'Overdue' : $daysUntil . ' days left' ?>
+                                        </small>
+                                    </div>
                                 <?php endif; ?>
                             </div>
                         </td>
 
-                        <!-- Boar -->
-                        <td class="d-none d-md-table-cell">
-                            🐗 <?= htmlspecialchars($row['boar_name']) ?>
+                        <td>
+                            <strong><?= htmlspecialchars($row['sow_tag']) ?></strong>
                         </td>
 
-                        <!-- Method -->
+                        <td class="d-none d-md-table-cell">
+                            <?= htmlspecialchars($row['boar_name']) ?>
+                        </td>
+
                         <td class="d-none d-lg-table-cell">
                             <span class="badge bg-<?= $row['method'] === 'Natural' ? 'success' : 'info' ?>">
                                 <?= $row['method'] ?>
@@ -157,31 +164,29 @@ $servings = $conn->query($query);
                             <?php endif; ?>
                         </td>
 
-                        <!-- Status -->
                         <td>
                             <span class="badge bg-<?= $row['sow_status'] === 'Pregnant' ? 'warning' : 'success' ?>">
-                                <?= $row['sow_status'] === 'Pregnant' ? 'Pregnant' : 'Completed' ?>
+                                <?= $row['sow_status'] ?>
                             </span>
                         </td>
 
-                        <!-- Actions -->
-                        <td>
-                            <div class="btn-group d-flex justify-content-end">
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
                                 <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>"
-                                   class="btn btn-sm btn-outline-success">
-                                    View Sow
+                                   class="btn btn-outline-success">
+                                   View Sow
                                 </a>
 
                                 <?php if ($row['sow_status'] === 'Pregnant'): ?>
                                     <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>"
-                                       class="btn btn-sm btn-outline-primary">
-                                        Record Birth
+                                       class="btn btn-outline-primary">
+                                       Farrow
                                     </a>
                                 <?php endif; ?>
                             </div>
                         </td>
-                    </tr>
 
+                    </tr>
                 <?php endwhile; ?>
             <?php endif; ?>
 
@@ -190,6 +195,25 @@ $servings = $conn->query($query);
     </div>
 </div>
 
+<!-- Pagination -->
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+            <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
+        </li>
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                Page <?= $page ?> of <?= $totalPages ?>
+            </span>
+        </li>
+
+        <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+            <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
+        </li>
+    </ul>
+</nav>
+
 <!-- Filtering JS -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -197,19 +221,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const method = document.getElementById('filterMethod');
     const status = document.getElementById('filterStatus');
     const rows = document.querySelectorAll('.serving-row');
-    const count = document.getElementById('recordCount');
 
     function filter() {
-        let visible = 0;
         rows.forEach(r => {
             const ok =
                 (!search.value || r.dataset.sow.includes(search.value.toLowerCase()) || r.dataset.boar.includes(search.value.toLowerCase())) &&
                 (!method.value || r.dataset.method === method.value) &&
                 (!status.value || r.dataset.status === status.value);
+
             r.style.display = ok ? '' : 'none';
-            if (ok) visible++;
         });
-        count.textContent = visible + ' records';
     }
 
     search.oninput = filter;
