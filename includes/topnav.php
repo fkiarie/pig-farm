@@ -7,7 +7,7 @@
     </button>
 
     <span class="navbar-brand mb-0 h1">
-      🐖 Pig Farm
+      Pig Farm
     </span>
 
     <div class="dropdown">
@@ -18,7 +18,7 @@
       <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" href="#">Profile</a></li>
         <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item text-danger" href="/auth/logout.php">Logout</a></li>
+        <li><a class="dropdown-item text-danger" href="<?= BASE_URL?>/auth/logout.php">Logout</a></li>
       </ul>
     </div>
 
