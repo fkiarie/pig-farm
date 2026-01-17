@@ -255,14 +255,14 @@ $result = $conn->query($sql);
                             </td>
                             
                             <td>
-                                <div class="btn-group d-flex justify-content-end" role="group">
+                                <!-- <div class="btn-group d-flex justify-content-end" role="group">
                                     <a href="view.php?id=<?= $row['id'] ?>"
                                        class="btn btn-sm btn-outline-success"
                                        data-bs-toggle="tooltip"
                                        title="View farrowing details">
                                        <span class="d-none d-lg-inline">View</span>
                                        <span class="d-inline d-lg-none">👁️</span>
-                                    </a>
+                                    </a> -->
                                     <a href="edit.php?id=<?= $row['id'] ?>"
                                        class="btn btn-sm btn-outline-primary"
                                        data-bs-toggle="tooltip"
