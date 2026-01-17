@@ -15,7 +15,7 @@ $limit = 10;
 $page  = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
-// Total records
+// Total records for pagination
 $totalResult = $conn->query("SELECT COUNT(*) AS total FROM servings");
 $totalRows = $totalResult->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
@@ -45,14 +45,12 @@ $query = "
 $servings = $conn->query($query);
 ?>
 
-<!-- Page Header -->
 <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h3 mb-0">Breeding Records</h1>
     <a href="add.php" class="btn btn-success btn-sm">+ Record Serving</a>
 </div>
 
-<!-- Filters -->
-<div class="card mb-4">
+<div class="card mb-4 shadow-sm">
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-4">
@@ -73,25 +71,22 @@ $servings = $conn->query($query);
                 </select>
             </div>
             <div class="col-md-2">
-                <button onclick="resetFilters()" class="btn btn-outline-secondary w-100">
-                    Reset
-                </button>
+                <button onclick="resetFilters()" class="btn btn-outline-secondary w-100">Reset</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Table -->
-<div class="card">
+<div class="card shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0" id="servingsTable">
             <thead class="table-light">
                 <tr>
-                    <th>Date</th>
-                    <th>Sow</th>
-                    <th class="d-none d-md-table-cell">Boar</th>
+                    <th style="cursor:pointer" onclick="sortTable(0)">Date ↕</th>
+                    <th style="cursor:pointer" onclick="sortTable(1)">Sow ↕</th>
+                    <th class="d-none d-md-table-cell" style="cursor:pointer" onclick="sortTable(2)">Boar ↕</th>
                     <th class="d-none d-lg-table-cell">Method</th>
-                    <th class="d-none d-xl-table-cell">Expected Farrowing</th>
+                    <th class="d-none d-xl-table-cell" style="cursor:pointer" onclick="sortTable(4)">Expected Farrowing ↕</th>
                     <th>Status</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -100,16 +95,15 @@ $servings = $conn->query($query);
 
             <?php if ($servings->num_rows === 0): ?>
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">
-                        No serving records found
-                    </td>
+                    <td colspan="7" class="text-center text-muted py-4">No serving records found</td>
                 </tr>
             <?php else: ?>
                 <?php while ($row = $servings->fetch_assoc()): ?>
                     <?php
                         $today = new DateTime();
                         $expected = new DateTime($row['expected_farrowing']);
-                        $daysUntil = $today->diff($expected)->days;
+                        $interval = $today->diff($expected);
+                        $daysUntil = $interval->days;
                         $isPast = $today > $expected;
                         $isSoon = !$isPast && $daysUntil <= 7;
                     ?>
@@ -120,15 +114,10 @@ $servings = $conn->query($query);
                         data-method="<?= $row['method'] ?>"
                         data-status="<?= $row['sow_status'] === 'Pregnant' ? 'Pregnant' : 'Completed' ?>">
 
-                        <!-- Date + Mobile Farrowing -->
                         <td>
                             <strong><?= date('d M Y', strtotime($row['serving_date'])) ?></strong>
-
-                            <!-- ✅ MOBILE FARROWING DATE -->
                             <div class="d-xl-none mt-1">
-                                <small class="text-muted">
-                                    Farrow: <?= date('d M Y', strtotime($row['expected_farrowing'])) ?>
-                                </small>
+                                <small class="text-muted">Farrow: <?= date('d M Y', strtotime($row['expected_farrowing'])) ?></small>
                                 <?php if ($row['sow_status'] === 'Pregnant'): ?>
                                     <div>
                                         <small class="<?= $isSoon || $isPast ? 'text-danger fw-bold' : 'text-muted' ?>">
@@ -139,13 +128,9 @@ $servings = $conn->query($query);
                             </div>
                         </td>
 
-                        <td>
-                            <strong><?= htmlspecialchars($row['sow_tag']) ?></strong>
-                        </td>
+                        <td><strong><?= htmlspecialchars($row['sow_tag']) ?></strong></td>
 
-                        <td class="d-none d-md-table-cell">
-                            <?= htmlspecialchars($row['boar_name']) ?>
-                        </td>
+                        <td class="d-none d-md-table-cell"><?= htmlspecialchars($row['boar_name']) ?></td>
 
                         <td class="d-none d-lg-table-cell">
                             <span class="badge bg-<?= $row['method'] === 'Natural' ? 'success' : 'info' ?>">
@@ -153,7 +138,6 @@ $servings = $conn->query($query);
                             </span>
                         </td>
 
-                        <!-- Desktop Farrowing -->
                         <td class="d-none d-xl-table-cell">
                             <?= date('d M Y', strtotime($row['expected_farrowing'])) ?>
                             <?php if ($row['sow_status'] === 'Pregnant'): ?>
@@ -172,20 +156,15 @@ $servings = $conn->query($query);
 
                         <td class="text-end">
                             <div class="btn-group btn-group-sm">
-                                <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>"
-                                   class="btn btn-outline-success">
-                                   View Sow
-                                </a>
+                                <a href="edit.php?id=<?= $row['serving_id'] ?>" class="btn btn-outline-primary">Edit</a>
+                                
+                                <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>" class="btn btn-outline-success">View Sow</a>
 
                                 <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                    <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>"
-                                       class="btn btn-outline-primary">
-                                       Farrow
-                                    </a>
+                                    <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>" class="btn btn-outline-primary">Farrow</a>
                                 <?php endif; ?>
                             </div>
                         </td>
-
                     </tr>
                 <?php endwhile; ?>
             <?php endif; ?>
@@ -195,27 +174,57 @@ $servings = $conn->query($query);
     </div>
 </div>
 
-<!-- Pagination -->
 <nav class="mt-4">
     <ul class="pagination justify-content-center">
         <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
             <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
         </li>
-
-        <li class="page-item disabled">
-            <span class="page-link">
-                Page <?= $page ?> of <?= $totalPages ?>
-            </span>
-        </li>
-
+        <li class="page-item disabled"><span class="page-link">Page <?= $page ?> of <?= $totalPages ?></span></li>
         <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
             <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
         </li>
     </ul>
 </nav>
 
-<!-- Filtering JS -->
 <script>
+/**
+ * Sorting Function for the table headers
+ */
+function sortTable(n) {
+    let table = document.getElementById("servingsTable");
+    let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    switching = true;
+    dir = "asc"; 
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            
+            let xContent = x.innerText.toLowerCase();
+            let yContent = y.innerText.toLowerCase();
+
+            if (dir == "asc") {
+                if (xContent > yContent) { shouldSwitch = true; break; }
+            } else if (dir == "desc") {
+                if (xContent < yContent) { shouldSwitch = true; break; }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount ++;      
+        } else {
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const search = document.getElementById('searchServing');
     const method = document.getElementById('filterMethod');
@@ -228,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 (!search.value || r.dataset.sow.includes(search.value.toLowerCase()) || r.dataset.boar.includes(search.value.toLowerCase())) &&
                 (!method.value || r.dataset.method === method.value) &&
                 (!status.value || r.dataset.status === status.value);
-
             r.style.display = ok ? '' : 'none';
         });
     }
