@@ -66,7 +66,7 @@ require_once '../includes/header.php';
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h3">Edit Breeding Record</h1>
-        <a href="index.php" class="btn btn-outline-secondary btn-sm">Back to List</a>
+        <a href="list.php" class="btn btn-outline-secondary btn-sm">Back to List</a>
     </div>
 
     <?php if ($error): ?>

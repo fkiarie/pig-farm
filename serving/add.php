@@ -6,22 +6,11 @@ require_once '../config/db.php';
 require_once '../includes/header.php';
 
 // Fetch active sows (NOT pregnant)
-$sows = $conn->query("
-    SELECT id, tag_no, breed
-    FROM sows 
-    WHERE status = 'Active'
-    ORDER BY tag_no
-");
+$sows = $conn->query("SELECT id, tag_no, breed FROM sows WHERE status = 'Active' ORDER BY tag_no");
 
 // Fetch active boars
-$boars = $conn->query("
-    SELECT id, name, breed
-    FROM boars 
-    WHERE status = 'Active'
-    ORDER BY name
-");
+$boars = $conn->query("SELECT id, name, breed FROM boars WHERE status = 'Active' ORDER BY name");
 
-// Count available animals
 $sow_count = $sows->num_rows;
 $boar_count = $boars->num_rows;
 
@@ -33,11 +22,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $boar_id = $_POST['boar_id'];
     $serving_date = $_POST['serving_date'];
     $method = $_POST['method'];
-
-    // Calculate expected farrowing (114 days)
     $expected_farrowing = date('Y-m-d', strtotime($serving_date . ' +114 days'));
 
-    // Safety check: confirm sow is still not pregnant
     $check = $conn->prepare("SELECT status FROM sows WHERE id = ?");
     $check->bind_param("i", $sow_id);
     $check->execute();
@@ -46,362 +32,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$result || $result['status'] !== 'Active') {
         $error = "This sow cannot be served (already pregnant or inactive).";
     } else {
-
-        // Insert serving
-        $stmt = $conn->prepare("
-            INSERT INTO servings 
-            (sow_id, boar_id, serving_date, expected_farrowing, method)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-        $stmt->bind_param(
-            "iisss",
-            $sow_id,
-            $boar_id,
-            $serving_date,
-            $expected_farrowing,
-            $method
-        );
+        $stmt = $conn->prepare("INSERT INTO servings (sow_id, boar_id, serving_date, expected_farrowing, method) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("iisss", $sow_id, $boar_id, $serving_date, $expected_farrowing, $method);
 
         if ($stmt->execute()) {
-
-            // Update sow status to Pregnant
-            $update = $conn->prepare("
-                UPDATE sows SET status = 'Pregnant' WHERE id = ?
-            ");
+            $update = $conn->prepare("UPDATE sows SET status = 'Pregnant' WHERE id = ?");
             $update->bind_param("i", $sow_id);
             $update->execute();
-
-            $success = "Serving recorded successfully! Expected farrowing date: " . date('d M Y', strtotime($expected_farrowing));
+            $success = "Serving recorded! Expected farrowing: " . date('d M Y', strtotime($expected_farrowing));
         } else {
-            $error = "Failed to record serving. Please try again.";
+            $error = "Failed to record serving.";
         }
     }
 }
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <span class="emoji-icon">❤️</span> Record Serving
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="list.php" class="btn btn-outline-secondary">
-            <span class="d-none d-sm-inline">← Back to List</span>
-            <span class="d-inline d-sm-none">← Back</span>
-        </a>
-    </div>
-</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+    .form-card { border: none; border-radius: 12px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); }
+    .stat-mini { border-radius: 10px; padding: 12px; background: #f8f9fa; border: 1px solid #eee; }
+    .stat-mini h4 { margin: 0; color: #0d6efd; font-weight: 700; }
+    .stat-mini small { font-size: 0.7rem; color: #6c757d; text-transform: uppercase; font-weight: 600; }
+    .gestation-preview { background: #e7f1ff; border-radius: 10px; padding: 15px; border-left: 5px solid #0d6efd; }
+</style>
 
-<!-- Alert Messages -->
-<?php if ($error): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <strong>Error!</strong> <?= $error ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-<?php endif; ?>
+<div class="container-fluid py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="list.php">Breeding</a></li>
+            <li class="breadcrumb-item active">Record Serving</li>
+        </ol>
+    </nav>
 
-<?php if ($success): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <strong>Success!</strong> <?= $success ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        <div class="mt-2">
-            <a href="list.php" class="btn btn-sm btn-success">View All Servings</a>
-            <button type="button" class="btn btn-sm btn-outline-success" onclick="window.location.reload()">
-                Record Another Serving
-            </button>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Statistics Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $sow_count ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐷</span> Available Sows
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $boar_count ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐗</span> Active Boars
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2">114</h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">📅</span> Days to Farrow
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-md-3">
-        <div class="card stat-card" style="cursor: help;" data-bs-toggle="tooltip" title="Expected farrowing date will be calculated automatically">
-            <div class="card-body">
-                <h3 class="mb-2" id="expectedDate">—</h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐣</span> Expected Date
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Main Form Card -->
-<div class="row justify-content-center">
-    <div class="col-12 col-lg-10 col-xl-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <span class="emoji-icon me-2">📝</span>
-                    Serving Information
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                
-                <?php if ($sow_count === 0 || $boar_count === 0): ?>
-                    <div class="alert alert-warning" role="alert">
-                        <h5 class="alert-heading">
-                            <span class="emoji-icon">⚠️</span> Cannot Record Serving
-                        </h5>
-                        <p class="mb-0">
-                            <?php if ($sow_count === 0): ?>
-                                No active sows available for serving. Please ensure you have active sows in the system.
-                            <?php elseif ($boar_count === 0): ?>
-                                No active boars available. Please ensure you have active boars in the system.
-                            <?php endif; ?>
-                        </p>
-                        <hr>
-                        <div class="d-flex gap-2">
-                            <?php if ($sow_count === 0): ?>
-                                <a href="../sows/add.php" class="btn btn-sm btn-warning">Add Sow</a>
-                            <?php endif; ?>
-                            <?php if ($boar_count === 0): ?>
-                                <a href="../boars/add.php" class="btn btn-sm btn-warning">Add Boar</a>
-                            <?php endif; ?>
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            
+            <?php if ($success): ?>
+                <div class="alert alert-success border-0 shadow-sm d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill fs-4 me-3"></i>
+                    <div>
+                        <div class="fw-bold">Success!</div>
+                        <?= $success ?>
+                        <div class="mt-2">
+                            <a href="list.php" class="btn btn-sm btn-success px-3">View Records</a>
+                            <button onclick="window.location.reload()" class="btn btn-sm btn-outline-success px-3 ms-2">Record Another</button>
                         </div>
                     </div>
-                <?php else: ?>
+                </div>
+            <?php endif; ?>
 
-                <form method="POST" class="needs-validation" novalidate id="servingForm">
-
-                    <div class="row g-4">
-                        
-                        <!-- Sow Selection -->
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <select name="sow_id" id="sow_id" class="form-select" required>
-                                    <option value="">Select a sow...</option>
-                                    <?php 
-                                    $sows->data_seek(0); // Reset pointer
-                                    while ($sow = $sows->fetch_assoc()): 
-                                    ?>
-                                        <option value="<?= $sow['id'] ?>" data-breed="<?= htmlspecialchars($sow['breed']) ?>">
-                                            <?= htmlspecialchars($sow['tag_no']) ?>
-                                            <?php if ($sow['breed']): ?>
-                                                (<?= htmlspecialchars($sow['breed']) ?>)
-                                            <?php endif; ?>
-                                        </option>
-                                    <?php endwhile; ?>
-                                </select>
-                                <label for="sow_id">
-                                    <span class="emoji-icon">🐷</span> Select Sow *
-                                </label>
-                                <div class="invalid-feedback">
-                                    Please select a sow.
-                                </div>
-                            </div>
-                            <small class="text-muted d-block mt-2">
-                                Choose the sow to be served
-                            </small>
+            <div class="card form-card">
+                <div class="card-body p-4 p-md-5">
+                    <div class="row align-items-center mb-4">
+                        <div class="col">
+                            <h2 class="h4 mb-1 fw-bold">Record New Serving</h2>
+                            <p class="text-muted small mb-0">Select animals and date to track gestation.</p>
                         </div>
-
-                        <!-- Boar Selection -->
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <select name="boar_id" id="boar_id" class="form-select" required>
-                                    <option value="">Select a boar...</option>
-                                    <?php 
-                                    $boars->data_seek(0); // Reset pointer
-                                    while ($boar = $boars->fetch_assoc()): 
-                                    ?>
-                                        <option value="<?= $boar['id'] ?>" data-breed="<?= htmlspecialchars($boar['breed']) ?>">
-                                            <?= htmlspecialchars($boar['name']) ?>
-                                            <?php if ($boar['breed']): ?>
-                                                (<?= htmlspecialchars($boar['breed']) ?>)
-                                            <?php endif; ?>
-                                        </option>
-                                    <?php endwhile; ?>
-                                </select>
-                                <label for="boar_id">
-                                    <span class="emoji-icon">🐗</span> Select Boar *
-                                </label>
-                                <div class="invalid-feedback">
-                                    Please select a boar.
-                                </div>
+                        <div class="col-auto d-none d-md-flex gap-2">
+                            <div class="stat-mini">
+                                <small>Available Sows</small>
+                                <h4><?= $sow_count ?></h4>
                             </div>
-                            <small class="text-muted d-block mt-2">
-                                Choose the boar for serving
-                            </small>
-                        </div>
-
-                        <!-- Serving Date -->
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <input type="date" 
-                                       name="serving_date" 
-                                       id="serving_date" 
-                                       class="form-control" 
-                                       max="<?= date('Y-m-d') ?>"
-                                       value="<?= date('Y-m-d') ?>"
-                                       required>
-                                <label for="serving_date">
-                                    <span class="emoji-icon">📅</span> Serving Date *
-                                </label>
-                                <div class="invalid-feedback">
-                                    Please select a serving date.
-                                </div>
-                            </div>
-                            <small class="text-muted d-block mt-2">
-                                Date when serving occurred
-                            </small>
-                        </div>
-
-                        <!-- Method -->
-                        <div class="col-12 col-md-6">
-                            <div class="form-floating">
-                                <select name="method" id="method" class="form-select">
-                                    <option value="Natural" selected>Natural Mating</option>
-                                    <option value="AI">Artificial Insemination (AI)</option>
-                                </select>
-                                <label for="method">
-                                    <span class="emoji-icon">🔬</span> Breeding Method
-                                </label>
-                            </div>
-                            <small class="text-muted d-block mt-2">
-                                Choose the breeding method used
-                            </small>
-                        </div>
-
-                        <!-- Expected Farrowing Info Card -->
-                        <div class="col-12">
-                            <div class="alert alert-info" role="alert" id="farrowingInfo" style="display: none;">
-                                <h6 class="alert-heading">
-                                    <span class="emoji-icon">ℹ️</span> Breeding Information
-                                </h6>
-                                <p class="mb-2">
-                                    <strong>Expected Farrowing Date:</strong> <span id="farrowingDate">—</span>
-                                </p>
-                                <small class="text-muted">
-                                    The typical gestation period for pigs is approximately 114 days (3 months, 3 weeks, 3 days).
-                                </small>
+                            <div class="stat-mini">
+                                <small>Active Boars</small>
+                                <h4><?= $boar_count ?></h4>
                             </div>
                         </div>
-
                     </div>
 
-                    <!-- Form Actions -->
-                    <div class="d-flex gap-2 justify-content-end mt-4 pt-3 border-top">
-                        <a href="list.php" class="btn btn-outline-secondary">
-                            Cancel
-                        </a>
-                        <button type="submit" class="btn btn-success">
-                            <span class="emoji-icon">✓</span> Record Serving
-                        </button>
-                    </div>
+                    <?php if ($sow_count === 0 || $boar_count === 0): ?>
+                        <div class="text-center py-5">
+                            <div class="p-4 bg-light rounded-circle d-inline-block mb-3">
+                                <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+                            </div>
+                            <h5>Insufficient Animals</h5>
+                            <p class="text-muted">You need at least one active sow and one active boar.</p>
+                            <div class="d-flex justify-content-center gap-2 mt-3">
+                                <a href="../sows/add.php" class="btn btn-primary btn-sm">Add Sow</a>
+                                <a href="../boars/add.php" class="btn btn-outline-primary btn-sm">Add Boar</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
 
-                </form>
+                    <form method="POST" id="servingForm" class="needs-validation" novalidate>
+                        <div class="row g-4">
+                            <div class="col-md-7">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Select Sow <span class="text-danger">*</span></label>
+                                        <select name="sow_id" class="form-select form-select-lg shadow-sm" required>
+                                            <option value="">Choose sow...</option>
+                                            <?php while ($s = $sows->fetch_assoc()): ?>
+                                                <option value="<?= $s['id'] ?>"><?= $s['tag_no'] ?> (<?= $s['breed'] ?: 'No Breed' ?>)</option>
+                                            <?php endwhile; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Select Boar <span class="text-danger">*</span></label>
+                                        <select name="boar_id" class="form-select form-select-lg shadow-sm" required>
+                                            <option value="">Choose boar...</option>
+                                            <?php while ($b = $boars->fetch_assoc()): ?>
+                                                <option value="<?= $b['id'] ?>"><?= $b['name'] ?> (<?= $b['breed'] ?: 'No Breed' ?>)</option>
+                                            <?php endwhile; ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Serving Date</label>
+                                        <input type="date" name="serving_date" id="serving_date" class="form-control" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Method</label>
+                                        <select name="method" class="form-select">
+                                            <option value="Natural">Natural</option>
+                                            <option value="AI">AI (Artificial Insemination)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
 
-                <?php endif; ?>
+                            <div class="col-md-5">
+                                <div class="gestation-preview h-100 d-flex flex-column justify-content-center">
+                                    <div class="text-center mb-3">
+                                        <i class="bi bi-calendar-event text-primary fs-1"></i>
+                                    </div>
+                                    <h6 class="text-center text-primary text-uppercase fw-bold mb-3" style="letter-spacing: 1px;">Gestation Calculation</h6>
+                                    <div class="text-center">
+                                        <div class="display-6 fw-bold text-dark mb-0" id="previewDate">—</div>
+                                        <p class="text-muted small">Estimated Farrowing Date</p>
+                                    </div>
+                                    <div class="mt-3 p-3 bg-white bg-opacity-50 rounded small">
+                                        <i class="bi bi-info-circle me-1"></i> Based on the standard <strong>114-day</strong> period (3 months, 3 weeks, 3 days).
+                                    </div>
+                                </div>
+                            </div>
 
-            </div>
-        </div>
-
-        <!-- Info Card -->
-        <div class="card mt-4">
-            <div class="card-body">
-                <h6 class="card-title">
-                    <span class="emoji-icon">💡</span> Important Information
-                </h6>
-                <ul class="mb-0 small text-muted">
-                    <li>Only active sows can be served</li>
-                    <li>The sow's status will automatically change to "Pregnant" after recording</li>
-                    <li>Expected farrowing date is calculated as 114 days from the serving date</li>
-                    <li>Make sure to record the serving date accurately for proper tracking</li>
-                </ul>
+                            <div class="col-12 mt-4 text-end">
+                                <hr class="my-4 opacity-25">
+                                <a href="list.php" class="btn btn-link text-decoration-none text-muted me-3">Cancel</a>
+                                <button type="submit" class="btn btn-primary btn-lg px-5 shadow">
+                                    <i class="bi bi-save me-2"></i>Record Serving
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- JavaScript for Dynamic Updates -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const servingDateInput = document.getElementById('serving_date');
-    const expectedDateDisplay = document.getElementById('expectedDate');
-    const farrowingInfo = document.getElementById('farrowingInfo');
-    const farrowingDate = document.getElementById('farrowingDate');
+    const dateInput = document.getElementById('serving_date');
+    const preview = document.getElementById('previewDate');
 
-    function calculateFarrowingDate() {
-        const servingDate = servingDateInput.value;
-        if (servingDate) {
-            const date = new Date(servingDate);
-            date.setDate(date.getDate() + 114);
-            
-            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-            const formattedDate = date.toLocaleDateString('en-US', options);
-            
-            expectedDateDisplay.textContent = formattedDate;
-            farrowingDate.textContent = formattedDate;
-            farrowingInfo.style.display = 'block';
-        } else {
-            expectedDateDisplay.textContent = '—';
-            farrowingInfo.style.display = 'none';
-        }
+    function updateGestation() {
+        if (!dateInput.value) return;
+        const d = new Date(dateInput.value);
+        d.setDate(d.getDate() + 114);
+        const options = { day: '2-digit', month: 'short', year: 'numeric' };
+        preview.textContent = d.toLocaleDateString('en-GB', options);
     }
 
-    // Calculate on page load if date is set
-    if (servingDateInput.value) {
-        calculateFarrowingDate();
-    }
-
-    // Update when date changes
-    servingDateInput.addEventListener('change', calculateFarrowingDate);
-
-    // Form validation
-    const form = document.getElementById('servingForm');
-    if (form) {
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        }, false);
-    }
-
-    // Auto-dismiss success alert after 5 seconds
-    const successAlert = document.querySelector('.alert-success');
-    if (successAlert && !successAlert.querySelector('.btn')) {
-        setTimeout(function() {
-            const alert = new bootstrap.Alert(successAlert);
-            alert.close();
-        }, 5000);
-    }
+    dateInput.addEventListener('change', updateGestation);
+    updateGestation(); // Initial load
 });
 </script>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once '../includes/header.php'; ?>

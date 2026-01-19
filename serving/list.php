@@ -6,34 +6,19 @@ require_once '../auth/auth_check.php';
 require_once '../config/db.php';
 require_once '../includes/header.php';
 
-/*
-|--------------------------------------------------------------------------
-| Pagination Setup
-|--------------------------------------------------------------------------
-*/
+/* Pagination Logic */
 $limit = 10;
 $page  = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $limit;
 
-// Total records for pagination
-$totalResult = $conn->query("SELECT COUNT(*) AS total FROM servings");
-$totalRows = $totalResult->fetch_assoc()['total'];
+$totalRows = $conn->query("SELECT COUNT(*) AS total FROM servings")->fetch_assoc()['total'];
 $totalPages = ceil($totalRows / $limit);
 
-/*
-|--------------------------------------------------------------------------
-| Fetch Servings
-|--------------------------------------------------------------------------
-*/
+/* Fetch Servings */
 $query = "
     SELECT 
-        sv.id AS serving_id,
-        sv.serving_date,
-        sv.expected_farrowing,
-        sv.method,
-        s.id AS sow_id,
-        s.tag_no AS sow_tag,
-        s.status AS sow_status,
+        sv.id AS serving_id, sv.serving_date, sv.expected_farrowing, sv.method,
+        s.id AS sow_id, s.tag_no AS sow_tag, s.status AS sow_status,
         b.name AS boar_name
     FROM servings sv
     JOIN sows s ON sv.sow_id = s.id
@@ -41,190 +26,180 @@ $query = "
     ORDER BY sv.serving_date DESC
     LIMIT $limit OFFSET $offset
 ";
-
 $servings = $conn->query($query);
 ?>
 
-<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h3 mb-0">Breeding Records</h1>
-    <a href="add.php" class="btn btn-success btn-sm">+ Record Serving</a>
-</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+    .card { border: none; border-radius: 12px; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .bg-soft-success { background-color: #e1f6e1; color: #198754; }
+    .bg-soft-warning { background-color: #fff3cd; color: #856404; }
+    .bg-soft-info { background-color: #cff4fc; color: #055160; }
+    .bg-soft-danger { background-color: #f8d7da; color: #842029; }
+    .bg-soft-primary { background-color: #e7f1ff; color: #0d6efd; }
+    .table thead th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; }
+    .overdue-pulse { animation: pulse-red 2s infinite; }
+    @keyframes pulse-red { 0% { color: #dc3545; } 50% { color: #ff8080; } 100% { color: #dc3545; } }
+</style>
 
-<div class="card mb-4 shadow-sm">
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <input type="text" id="searchServing" class="form-control" placeholder="Search sow or boar">
-            </div>
-            <div class="col-md-3">
-                <select id="filterMethod" class="form-select">
-                    <option value="">All Methods</option>
-                    <option value="Natural">Natural</option>
-                    <option value="AI">AI</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select id="filterStatus" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="Pregnant">Pregnant</option>
-                    <option value="Completed">Completed</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button onclick="resetFilters()" class="btn btn-outline-secondary w-100">Reset</button>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0"><i class="bi bi-calendar-check me-2 text-primary"></i>Breeding Records</h1>
+            <p class="text-muted small mb-0">Track sow servings and expected farrowing dates.</p>
+        </div>
+        <a href="add.php" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> <span class="d-none d-sm-inline">Record New Serving</span><span class="d-inline d-sm-none">Record</span>
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Search</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="searchServing" class="form-control border-start-0" placeholder="Sow tag or boar name...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Method</label>
+                    <select id="filterMethod" class="form-select">
+                        <option value="">All Methods</option>
+                        <option value="Natural">Natural</option>
+                        <option value="AI">AI</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Status</label>
+                    <select id="filterStatus" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="Pregnant">Pregnant</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button onclick="resetFilters()" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reset
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="card shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="servingsTable">
-            <thead class="table-light">
-                <tr>
-                    <th style="cursor:pointer" onclick="sortTable(0)">Date ↕</th>
-                    <th style="cursor:pointer" onclick="sortTable(1)">Sow ↕</th>
-                    <th class="d-none d-md-table-cell" style="cursor:pointer" onclick="sortTable(2)">Boar ↕</th>
-                    <th class="d-none d-lg-table-cell">Method</th>
-                    <th class="d-none d-xl-table-cell" style="cursor:pointer" onclick="sortTable(4)">Expected Farrowing ↕</th>
-                    <th>Status</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-
-            <?php if ($servings->num_rows === 0): ?>
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No serving records found</td>
-                </tr>
-            <?php else: ?>
-                <?php while ($row = $servings->fetch_assoc()): ?>
-                    <?php
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="servingsTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Serving Date</th>
+                        <th>Sow Tag</th>
+                        <th class="d-none d-md-table-cell">Boar</th>
+                        <th class="d-none d-lg-table-cell">Method</th>
+                        <th class="d-none d-xl-table-cell">Due Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ($servings->num_rows === 0): ?>
+                    <tr><td colspan="7" class="text-center py-5 text-muted">No breeding records found.</td></tr>
+                <?php else: ?>
+                    <?php while ($row = $servings->fetch_assoc()): 
                         $today = new DateTime();
                         $expected = new DateTime($row['expected_farrowing']);
-                        $interval = $today->diff($expected);
-                        $daysUntil = $interval->days;
+                        $daysUntil = $today->diff($expected)->days;
                         $isPast = $today > $expected;
-                        $isSoon = !$isPast && $daysUntil <= 7;
                     ?>
-
                     <tr class="serving-row"
                         data-sow="<?= strtolower($row['sow_tag']) ?>"
                         data-boar="<?= strtolower($row['boar_name']) ?>"
                         data-method="<?= $row['method'] ?>"
                         data-status="<?= $row['sow_status'] === 'Pregnant' ? 'Pregnant' : 'Completed' ?>">
+                        
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark"><?= date('d M Y', strtotime($row['serving_date'])) ?></div>
+                            <small class="text-muted d-xl-none">Due: <?= date('d M', strtotime($row['expected_farrowing'])) ?></small>
+                        </td>
 
                         <td>
-                            <strong><?= date('d M Y', strtotime($row['serving_date'])) ?></strong>
-                            <div class="d-xl-none mt-1">
-                                <small class="text-muted">Farrow: <?= date('d M Y', strtotime($row['expected_farrowing'])) ?></small>
-                                <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                    <div>
-                                        <small class="<?= $isSoon || $isPast ? 'text-danger fw-bold' : 'text-muted' ?>">
-                                            <?= $isPast ? 'Overdue' : $daysUntil . ' days left' ?>
-                                        </small>
-                                    </div>
-                                <?php endif; ?>
+                            <div class="d-flex align-items-center">
+                                <div class="p-2 bg-soft-primary rounded-circle me-2 d-none d-sm-block">
+                                    <i class="bi bi-gender-female" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <span class="fw-bold"><?= htmlspecialchars($row['sow_tag']) ?></span>
                             </div>
                         </td>
 
-                        <td><strong><?= htmlspecialchars($row['sow_tag']) ?></strong></td>
-
-                        <td class="d-none d-md-table-cell"><?= htmlspecialchars($row['boar_name']) ?></td>
+                        <td class="d-none d-md-table-cell">
+                            <span class="text-secondary small"><i class="bi bi-gender-male me-1"></i><?= htmlspecialchars($row['boar_name']) ?></span>
+                        </td>
 
                         <td class="d-none d-lg-table-cell">
-                            <span class="badge bg-<?= $row['method'] === 'Natural' ? 'success' : 'info' ?>">
+                            <?php $mthdCol = $row['method'] === 'Natural' ? 'success' : 'info'; ?>
+                            <span class="badge bg-soft-<?= $mthdCol ?> rounded-pill px-3">
                                 <?= $row['method'] ?>
                             </span>
                         </td>
 
                         <td class="d-none d-xl-table-cell">
-                            <?= date('d M Y', strtotime($row['expected_farrowing'])) ?>
+                            <div class="small fw-bold"><?= date('d M Y', strtotime($row['expected_farrowing'])) ?></div>
                             <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                <br>
-                                <small class="<?= $isSoon || $isPast ? 'text-danger fw-bold' : 'text-muted' ?>">
-                                    <?= $isPast ? 'Overdue' : $daysUntil . ' days left' ?>
+                                <small class="<?= $isPast ? 'overdue-pulse fw-bold' : 'text-muted' ?>">
+                                    <i class="bi bi-clock me-1"></i><?= $isPast ? 'Overdue' : $daysUntil . ' days left' ?>
                                 </small>
                             <?php endif; ?>
                         </td>
 
                         <td>
-                            <span class="badge bg-<?= $row['sow_status'] === 'Pregnant' ? 'warning' : 'success' ?>">
-                                <?= $row['sow_status'] ?>
+                            <?php $stsCol = $row['sow_status'] === 'Pregnant' ? 'warning' : 'success'; ?>
+                            <span class="badge bg-soft-<?= $stsCol ?> px-3">
+                                <i class="bi bi-dot"></i> <?= $row['sow_status'] ?>
                             </span>
                         </td>
 
-                        <td class="text-end">
-                            <div class="btn-group btn-group-sm">
-                                <a href="edit.php?id=<?= $row['serving_id'] ?>" class="btn btn-outline-primary">Edit</a>
-                                
-                                <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>" class="btn btn-outline-success">View Sow</a>
-
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a href="edit.php?id=<?= $row['serving_id'] ?>" class="btn btn-sm btn-outline-secondary border-light-subtle shadow-sm" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="<?= BASE_URL ?>/sows/profile.php?id=<?= $row['sow_id'] ?>" class="btn btn-sm btn-outline-primary border-light-subtle shadow-sm" title="View Sow">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                    <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>" class="btn btn-outline-primary">Farrow</a>
+                                    <a href="<?= BASE_URL ?>/farrowing/list.php?serving_id=<?= $row['serving_id'] ?>" class="btn btn-sm btn-primary shadow-sm ms-1" title="Log Farrowing">
+                                        <i class="bi bi-egg-fried"></i>
+                                    </a>
                                 <?php endif; ?>
                             </div>
                         </td>
                     </tr>
-                <?php endwhile; ?>
-            <?php endif; ?>
-
-            </tbody>
-        </table>
+                    <?php endwhile; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        
+        <?php if ($totalPages > 1): ?>
+        <div class="card-footer bg-white border-top-0 py-3">
+            <nav>
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?page=<?= $page - 1 ?>"><i class="bi bi-chevron-left"></i></a>
+                    </li>
+                    <li class="page-item disabled"><span class="page-link text-dark">Page <?= $page ?> of <?= $totalPages ?></span></li>
+                    <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                        <a class="page-link" href="?page=<?= $page + 1 ?>"><i class="bi bi-chevron-right"></i></a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
-<nav class="mt-4">
-    <ul class="pagination justify-content-center">
-        <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-            <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
-        </li>
-        <li class="page-item disabled"><span class="page-link">Page <?= $page ?> of <?= $totalPages ?></span></li>
-        <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-            <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
-        </li>
-    </ul>
-</nav>
-
 <script>
-/**
- * Sorting Function for the table headers
- */
-function sortTable(n) {
-    let table = document.getElementById("servingsTable");
-    let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    switching = true;
-    dir = "asc"; 
-    while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-            shouldSwitch = false;
-            x = rows[i].getElementsByTagName("TD")[n];
-            y = rows[i + 1].getElementsByTagName("TD")[n];
-            
-            let xContent = x.innerText.toLowerCase();
-            let yContent = y.innerText.toLowerCase();
-
-            if (dir == "asc") {
-                if (xContent > yContent) { shouldSwitch = true; break; }
-            } else if (dir == "desc") {
-                if (xContent < yContent) { shouldSwitch = true; break; }
-            }
-        }
-        if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-            switchcount ++;      
-        } else {
-            if (switchcount == 0 && dir == "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const search = document.getElementById('searchServing');
     const method = document.getElementById('filterMethod');
@@ -232,12 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = document.querySelectorAll('.serving-row');
 
     function filter() {
+        const query = search.value.toLowerCase();
         rows.forEach(r => {
-            const ok =
-                (!search.value || r.dataset.sow.includes(search.value.toLowerCase()) || r.dataset.boar.includes(search.value.toLowerCase())) &&
-                (!method.value || r.dataset.method === method.value) &&
-                (!status.value || r.dataset.status === status.value);
-            r.style.display = ok ? '' : 'none';
+            const matchesSearch = !query || r.dataset.sow.includes(query) || r.dataset.boar.includes(query);
+            const matchesMethod = !method.value || r.dataset.method === method.value;
+            const matchesStatus = !status.value || r.dataset.status === status.value;
+            r.style.display = (matchesSearch && matchesMethod && matchesStatus) ? '' : 'none';
         });
     }
 
