@@ -7,7 +7,7 @@ require_once '../config/db.php';
 
 // Check if ID is provided
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
-    header("Location: index.php?error=invalid_id");
+    header("Location: list.php?error=invalid_id");
     exit();
 }
 
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($stmt->execute()) {
         // If status is changed to completed or if this is a pregnant record, you might want to update the sow status here as well
-        header("Location: index.php?success=Record updated");
+        header("Location: list.php?success=Record updated");
         exit();
     } else {
         $error = "Update failed: " . $conn->error;
