@@ -3,13 +3,7 @@ require_once __DIR__ . '/../auth/auth_check.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/header.php';
 
-/*
-|--------------------------------------------------------------------------
-| Fetch Weanings with Statistics
-|--------------------------------------------------------------------------
-*/
-
-// Get statistics
+/* Statistics */
 $stats = $conn->query("
     SELECT 
         COUNT(*) as total_weanings,
@@ -20,409 +14,177 @@ $stats = $conn->query("
     JOIN farrowings f ON w.farrowing_id = f.id
 ")->fetch_assoc();
 
-// Fetch all weanings
-$sql = "
-SELECT w.*, 
-       s.tag_no AS sow_tag,
-       s.breed AS sow_breed,
-       f.farrowing_date,
-       f.piglets_alive
-FROM weanings w
-JOIN sows s ON w.sow_id = s.id
-JOIN farrowings f ON w.farrowing_id = f.id
-ORDER BY w.weaning_date DESC
-";
+/* Fetch Records */
+$sql = "SELECT w.*, s.tag_no AS sow_tag, s.breed AS sow_breed, f.farrowing_date, f.piglets_alive
+        FROM weanings w
+        JOIN sows s ON w.sow_id = s.id
+        JOIN farrowings f ON w.farrowing_id = f.id
+        ORDER BY w.weaning_date DESC";
 $result = $conn->query($sql);
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <span class="emoji-icon">🐷</span> Weaning Records
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="add.php" class="btn btn-success">
-            <span class="d-none d-sm-inline">+ Record New Weaning</span>
-            <span class="d-inline d-sm-none">+ Add</span>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+    :root { --glass-bg: rgba(255, 255, 255, 0.9); }
+    .card { border: none; border-radius: 12px; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .stat-box { border-radius: 10px; padding: 20px; background: #fff; border: 1px solid #edf2f7; text-align: center; transition: transform 0.2s; }
+    .stat-box:hover { transform: translateY(-3px); }
+    .stat-box h3 { font-weight: 800; color: #2d3748; margin-bottom: 2px; }
+    .stat-box small { color: #718096; text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; font-weight: 700; }
+    
+    .survival-track { height: 8px; border-radius: 10px; background: #edf2f7; overflow: hidden; margin-top: 8px; }
+    .survival-fill { height: 100%; border-radius: 10px; transition: width 0.6s ease; }
+    
+    .badge-nursing { font-size: 0.75rem; padding: 5px 10px; border-radius: 6px; font-weight: 600; }
+    .nursing-optimal { background-color: #d1e7dd; color: #0f5132; }
+    .nursing-alert { background-color: #fff3cd; color: #664d03; }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1"><i class="bi bi-box-arrow-right text-primary me-2"></i>Weaning Records</h1>
+            <p class="text-muted small mb-0">Track litter survival and nursing efficiency across cycles.</p>
+        </div>
+        <a href="add.php" class="btn btn-primary shadow-sm px-4">
+            <i class="bi bi-plus-lg me-2"></i>Record New Weaning
         </a>
     </div>
-</div>
 
-<!-- Statistics Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $stats['total_weanings'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">📋</span> Total Weanings
-                </p>
+    <div class="row g-3 mb-4 text-center">
+        <div class="col-6 col-md-3">
+            <div class="stat-box">
+                <small>Total Batches</small>
+                <h3><?= $stats['total_weanings'] ?></h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-box">
+                <small>Piglets Weaned</small>
+                <h3 class="text-success"><?= $stats['total_weaned'] ?></h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-box">
+                <small>Avg per Litter</small>
+                <h3 class="text-primary"><?= $stats['avg_weaned'] ?></h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-box">
+                <small>Avg Nursing</small>
+                <h3 class="text-info"><?= $stats['avg_nursing_days'] ?>d</h3>
             </div>
         </div>
     </div>
-    
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $stats['total_weaned'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐽</span> Piglets Weaned
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $stats['avg_weaned'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">📊</span> Avg per Litter
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-lg-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $stats['avg_nursing_days'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">📅</span> Avg Nursing Days
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Filter and Search Section -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row g-3 align-items-end">
-            <div class="col-12 col-md-6 col-lg-4">
-                <label for="searchWeaning" class="form-label">Search Weanings</label>
-                <input type="text" 
-                       class="form-control" 
-                       id="searchWeaning" 
-                       placeholder="Search by sow tag...">
-            </div>
-            <div class="col-12 col-md-4 col-lg-3">
-                <label for="filterMonth" class="form-label">Filter by Month</label>
-                <input type="month" 
-                       class="form-control" 
-                       id="filterMonth">
-            </div>
-            <div class="col-12 col-md-2 col-lg-2">
-                <button type="button" class="btn btn-outline-secondary w-100" onclick="resetFilters()">
-                    Reset
-                </button>
+    <div class="card mb-4">
+        <div class="card-body p-3">
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchWeaning" class="form-control border-start-0" placeholder="Search sow tag...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <input type="month" id="filterMonth" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <button onclick="resetFilters()" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Weanings Table -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>All Weaning Records</span>
-        <span class="badge bg-secondary" id="recordCount"><?= $result->num_rows ?> records</span>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" id="weaningsTable">
-            <thead>
-                <tr>
-                    <th>Weaning Date</th>
-                    <th>
-                        <span class="emoji-icon">🐷</span> Sow
-                    </th>
-                    <th class="d-none d-lg-table-cell">Farrowing Date</th>
-                    <th class="d-none d-md-table-cell">Nursing Period</th>
-                    <th>Piglets Weaned</th>
-                    <th class="d-none d-xl-table-cell">Survival Rate</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($result->num_rows === 0): ?>
-                    <tr class="no-results">
-                        <td colspan="7" class="text-center py-5">
-                            <div class="text-muted">
-                                <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🐷</span>
-                                <h5>No weaning records found</h5>
-                                <p class="mb-3">Start by recording your first weaning event.</p>
-                                <a href="add.php" class="btn btn-success">+ Record First Weaning</a>
-                            </div>
-                        </td>
+    <div class="card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="weaningsTable">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Weaning Date</th>
+                        <th>Sow Detail</th>
+                        <th class="d-none d-lg-table-cell">Nursing Period</th>
+                        <th>Performance</th>
+                        <th class="text-end pe-4">Actions</th>
                     </tr>
-                <?php else: ?>
-                    <?php while ($row = $result->fetch_assoc()): ?>
-                        <?php
-                        // Calculate nursing period
-                        $farrowingDate = new DateTime($row['farrowing_date']);
-                        $weaningDate = new DateTime($row['weaning_date']);
-                        $nursingDays = $farrowingDate->diff($weaningDate)->days;
-                        
-                        // Calculate survival rate (weaned vs born alive)
-                        $survivalRate = $row['piglets_alive'] > 0 
-                            ? round(($row['piglets_weaned'] / $row['piglets_alive']) * 100, 1) 
-                            : 0;
-                        
-                        // Determine nursing period status
-                        $nursingStatus = $nursingDays < 21 ? 'early' : 
-                                       ($nursingDays > 28 ? 'extended' : 'optimal');
-                        
-                        // Badge colors
-                        $nursingBadge = $nursingStatus === 'optimal' ? 'success' : 
-                                      ($nursingStatus === 'early' ? 'warning' : 'info');
+                </thead>
+                <tbody>
+                    <?php if ($result->num_rows === 0): ?>
+                        <tr><td colspan="5" class="text-center py-5">No records found.</td></tr>
+                    <?php else: ?>
+                        <?php while ($row = $result->fetch_assoc()): 
+                            $fDate = new DateTime($row['farrowing_date']);
+                            $wDate = new DateTime($row['weaning_date']);
+                            $days = $fDate->diff($wDate)->days;
+                            $survival = $row['piglets_alive'] > 0 ? round(($row['piglets_weaned'] / $row['piglets_alive']) * 100) : 0;
+                            $isOptimal = ($days >= 21 && $days <= 28);
                         ?>
-                        <tr class="weaning-row" 
-                            data-sow="<?= strtolower(htmlspecialchars($row['sow_tag'])) ?>"
-                            data-date="<?= date('Y-m', strtotime($row['weaning_date'])) ?>">
-                            
-                            <td>
-                                <div>
-                                    <strong class="d-block"><?= date('d M Y', strtotime($row['weaning_date'])) ?></strong>
-                                    <small class="text-muted">
-                                        <?php
-                                        $today = new DateTime();
-                                        $daysSince = $today->diff($weaningDate)->days;
-                                        echo $daysSince . ' days ago';
-                                        ?>
-                                    </small>
-                                </div>
+                        <tr class="weaning-row" data-sow="<?= strtolower(htmlspecialchars($row['sow_tag'])) ?>" data-date="<?= date('Y-m', strtotime($row['weaning_date'])) ?>">
+                            <td class="ps-4">
+                                <div class="fw-bold"><?= date('d M Y', strtotime($row['weaning_date'])) ?></div>
+                                <small class="text-muted"><?= $wDate->diff(new DateTime())->days ?> days ago</small>
                             </td>
-                            
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <span class="emoji-icon me-2">🐷</span>
+                                    <div class="avatar-sm me-2 bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width:32px; height:32px;">
+                                        <i class="bi bi-female"></i>
+                                    </div>
                                     <div>
-                                        <strong class="d-block"><?= htmlspecialchars($row['sow_tag']) ?></strong>
-                                        <small class="text-muted d-lg-none">
-                                            Born: <?= date('d M Y', strtotime($row['farrowing_date'])) ?>
-                                        </small>
+                                        <div class="fw-bold"><?= htmlspecialchars($row['sow_tag']) ?></div>
+                                        <small class="text-muted"><?= htmlspecialchars($row['sow_breed']) ?></small>
                                     </div>
                                 </div>
                             </td>
-                            
                             <td class="d-none d-lg-table-cell">
-                                <div>
-                                    <span class="d-block"><?= date('d M Y', strtotime($row['farrowing_date'])) ?></span>
-                                    <small class="text-muted">
-                                        Farrowing date
-                                    </small>
+                                <span class="badge-nursing <?= $isOptimal ? 'nursing-optimal' : 'nursing-alert' ?>">
+                                    <i class="bi <?= $isOptimal ? 'bi-check-circle' : 'bi-exclamation-circle' ?> me-1"></i>
+                                    <?= $days ?> Days
+                                </span>
+                            </td>
+                            <td style="min-width: 180px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold text-success"><?= $row['piglets_weaned'] ?> Weaned</span>
+                                    <small class="text-muted"><?= $survival ?>% Survival</small>
+                                </div>
+                                <div class="survival-track">
+                                    <div class="survival-fill <?= $survival > 90 ? 'bg-success' : ($survival > 70 ? 'bg-primary' : 'bg-warning') ?>" style="width: <?= $survival ?>%"></div>
                                 </div>
                             </td>
-                            
-                            <td class="d-none d-md-table-cell">
-                                <div>
-                                    <span class="badge bg-<?= $nursingBadge ?>" style="font-size: 0.9rem;">
-                                        <?= $nursingDays ?> days
-                                    </span>
-                                    <small class="d-block text-muted mt-1">
-                                        <?php if ($nursingStatus === 'optimal'): ?>
-                                            ✓ Optimal period
-                                        <?php elseif ($nursingStatus === 'early'): ?>
-                                            ⚠️ Early weaning
-                                        <?php else: ?>
-                                            ℹ️ Extended nursing
-                                        <?php endif; ?>
-                                    </small>
-                                </div>
-                            </td>
-                            
-                            <td>
-                                <div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="fs-4 fw-bold text-success me-2"><?= $row['piglets_weaned'] ?></span>
-                                        <div class="d-flex flex-column">
-                                            <span class="badge bg-success" style="font-size: 0.75rem;">
-                                                <?= $survivalRate ?>% survival
-                                            </span>
-                                            <small class="text-muted mt-1 d-md-none">
-                                                <?= $nursingDays ?> days old
-                                            </small>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted d-xl-none d-block mt-1">
-                                        of <?= $row['piglets_alive'] ?> born alive
-                                    </small>
-                                </div>
-                            </td>
-                            
-                            <td class="d-none d-xl-table-cell">
-                                <div>
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar bg-success" 
-                                             role="progressbar" 
-                                             style="width: <?= $survivalRate ?>%"
-                                             aria-valuenow="<?= $survivalRate ?>" 
-                                             aria-valuemin="0" 
-                                             aria-valuemax="100">
-                                            <?= $survivalRate ?>%
-                                        </div>
-                                    </div>
-                                    <small class="text-muted d-block mt-1">
-                                        <?= $row['piglets_weaned'] ?> of <?= $row['piglets_alive'] ?> survived
-                                    </small>
-                                </div>
-                            </td>
-                            
-                            <td>
-                                <div class="btn-group d-flex justify-content-end" role="group">
-                                    <a href="view.php?id=<?= $row['id'] ?>"
-                                       class="btn btn-sm btn-outline-success"
-                                       data-bs-toggle="tooltip"
-                                       title="View weaning details">
-                                       <span class="d-none d-lg-inline">View</span>
-                                       <span class="d-inline d-lg-none">👁️</span>
-                                    </a>
-                                    <a href="edit.php?id=<?= $row['id'] ?>"
-                                       class="btn btn-sm btn-outline-primary"
-                                       data-bs-toggle="tooltip"
-                                       title="Edit weaning record">
-                                       <span class="d-none d-lg-inline">Edit</span>
-                                       <span class="d-inline d-lg-none">✏️</span>
-                                    </a>
-                                    <a href="delete.php?id=<?= $row['id'] ?>"
-                                       class="btn btn-sm btn-outline-danger"
-                                       data-bs-toggle="tooltip"
-                                       title="Delete record"
-                                       data-confirm-delete="Are you sure you want to delete this weaning record for sow '<?= htmlspecialchars($row['sow_tag']) ?>'?">
-                                       <span class="d-none d-lg-inline">Delete</span>
-                                       <span class="d-inline d-lg-none">🗑️</span>
-                                    </a>
+                            <td class="text-end pe-4">
+                                <div class="btn-group shadow-sm">
+                                    <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-white border"><i class="bi bi-pencil"></i></a>
+                                    <a href="delete.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-white border text-danger" onclick="return confirm('Delete this record?')"><i class="bi bi-trash"></i></a>
                                 </div>
                             </td>
                         </tr>
-                    <?php endwhile; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Nursing Period Guide -->
-<div class="card mt-4">
-    <div class="card-body">
-        <h6 class="card-title">
-            <span class="emoji-icon">📊</span> Nursing Period Guide
-        </h6>
-        <div class="row g-3">
-            <div class="col-12 col-md-4">
-                <div class="d-flex align-items-center">
-                    <span class="badge bg-warning me-2" style="font-size: 1.5rem;">&lt;21</span>
-                    <div>
-                        <strong class="d-block">Early Weaning</strong>
-                        <small class="text-muted">Less than 21 days nursing</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="d-flex align-items-center">
-                    <span class="badge bg-success me-2" style="font-size: 1.5rem;">21-28</span>
-                    <div>
-                        <strong class="d-block">Optimal Period</strong>
-                        <small class="text-muted">21-28 days nursing (ideal)</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-md-4">
-                <div class="d-flex align-items-center">
-                    <span class="badge bg-info me-2" style="font-size: 1.5rem;">&gt;28</span>
-                    <div>
-                        <strong class="d-block">Extended Nursing</strong>
-                        <small class="text-muted">More than 28 days nursing</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <hr class="my-3">
-        <div class="row g-3">
-            <div class="col-12 col-md-6">
-                <small class="text-muted">
-                    <strong>Optimal Weaning Age:</strong> 21-28 days for best piglet development
-                </small>
-            </div>
-            <div class="col-12 col-md-6">
-                <small class="text-muted">
-                    <strong>Survival Rate:</strong> Percentage of born alive piglets that survived to weaning
-                </small>
-            </div>
+                        <?php endwhile; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<!-- Search/Filter JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchWeaning');
-    const monthFilter = document.getElementById('filterMonth');
-    const tableRows = document.querySelectorAll('.weaning-row');
-    const recordCount = document.getElementById('recordCount');
+    const search = document.getElementById('searchWeaning');
+    const filter = document.getElementById('filterMonth');
+    const rows = document.querySelectorAll('.weaning-row');
 
-    function filterTable() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const monthValue = monthFilter.value;
-        let visibleCount = 0;
-
-        tableRows.forEach(row => {
-            const sow = row.dataset.sow;
-            const date = row.dataset.date;
-
-            const matchesSearch = sow.includes(searchTerm);
-            const matchesMonth = !monthValue || date === monthValue;
-
-            if (matchesSearch && matchesMonth) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+    function applyFilters() {
+        const q = search.value.toLowerCase();
+        const m = filter.value;
+        rows.forEach(r => {
+            const matchesSearch = r.dataset.sow.includes(q);
+            const matchesMonth = !m || r.dataset.date === m;
+            r.style.display = (matchesSearch && matchesMonth) ? '' : 'none';
         });
-
-        // Update record count
-        if (recordCount) {
-            recordCount.textContent = visibleCount + ' record' + (visibleCount !== 1 ? 's' : '');
-        }
-
-        // Show/hide no results message
-        const noResultsRow = document.querySelector('.no-results');
-        if (visibleCount === 0 && tableRows.length > 0) {
-            if (!noResultsRow) {
-                const tbody = document.querySelector('#weaningsTable tbody');
-                const tr = document.createElement('tr');
-                tr.className = 'no-results';
-                tr.innerHTML = `
-                    <td colspan="7" class="text-center py-5">
-                        <div class="text-muted">
-                            <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">🔍</span>
-                            <h5>No weanings match your search</h5>
-                            <p class="mb-0">Try adjusting your filters or search term.</p>
-                        </div>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            }
-        } else if (noResultsRow && visibleCount > 0) {
-            noResultsRow.remove();
-        }
     }
 
-    // Event listeners
-    if (searchInput) {
-        searchInput.addEventListener('input', filterTable);
-    }
-
-    if (monthFilter) {
-        monthFilter.addEventListener('change', filterTable);
-    }
-
-    // Reset filters function
-    window.resetFilters = function() {
-        searchInput.value = '';
-        monthFilter.value = '';
-        filterTable();
-    };
+    search.addEventListener('input', applyFilters);
+    filter.addEventListener('change', applyFilters);
+    window.resetFilters = () => { search.value = ''; filter.value = ''; applyFilters(); };
 });
 </script>
 
