@@ -1,376 +1,185 @@
-<?php session_start(); ?>
+<?php 
+session_start(); 
+// Redirect if already logged in
+if (isset($_SESSION['user_id'])) {
+    header("Location: ../dashboard/index.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Pig Farm Login</title>
-    <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+    <title>Login | Pig Farm Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
     <style>
-        /* Custom Login Page Styles */
+        :root {
+            --farm-primary: #198754;
+            --farm-secondary: #20c997;
+        }
+
         body {
-            background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+            background: #f4f7f6;
+            background-image: linear-gradient(135deg, rgba(25, 135, 84, 0.9) 0%, rgba(32, 201, 151, 0.8) 100%), 
+                              url('https://images.unsplash.com/photo-1516467508483-a7212febe31a?auto=format&fit=crop&q=80&w=1000');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .login-container {
-            width: 100%;
-            padding: 1rem;
+            font-family: 'Inter', sans-serif;
         }
 
         .login-card {
-            border-radius: 1rem;
             border: none;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            border-radius: 1.25rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            background: rgba(255, 255, 255, 0.95);
             overflow: hidden;
-            animation: slideUp 0.5s ease;
-            background: #ffffff;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .login-header {
-            background: linear-gradient(135deg, #198754 0%, #20c997 100%);
-            color: white;
-            padding: 2rem 1.5rem;
+            background: var(--farm-primary);
+            padding: 2.5rem 1rem;
             text-align: center;
+            color: white;
         }
 
-        .login-header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
+        .farm-logo {
+            font-size: 3rem;
             margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            display: block;
         }
 
-        .login-header p {
-            margin: 0;
-            opacity: 0.95;
-            font-size: 1rem;
-        }
-
-        .login-body {
-            padding: 2rem 1.5rem;
-        }
-
-        .form-floating {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-floating label {
-            color: #6c757d;
-        }
-
-        .form-control {
-            border: 2px solid #e9ecef;
-            border-radius: 0.5rem;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: #198754;
-            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+        .form-floating > .form-control:focus ~ label {
+            color: var(--farm-primary);
         }
 
         .btn-login {
-            background: linear-gradient(135deg, #198754 0%, #20c997 100%);
-            border: none;
-            border-radius: 0.5rem;
-            padding: 0.875rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 600;
+            background: var(--farm-primary);
             color: white;
+            padding: 0.8rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            border: none;
             transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
         }
 
         .btn-login:hover {
+            background: #157347;
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(25, 135, 84, 0.3);
-            background: linear-gradient(135deg, #157347 0%, #1aa179 100%);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .alert {
-            border-radius: 0.5rem;
-            border: none;
-            padding: 1rem 1.25rem;
-            animation: shake 0.5s ease;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        .login-footer {
-            text-align: center;
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .login-footer p {
-            margin: 0;
-            color: #6c757d;
-            font-size: 0.875rem;
-        }
-
-        /* Mobile Responsive Adjustments */
-        @media (max-width: 767.98px) {
-            body {
-                background: linear-gradient(135deg, #198754 0%, #20c997 100%);
-                padding: 1rem;
-            }
-
-            .login-header h1 {
-                font-size: 2rem;
-            }
-
-            .login-header p {
-                font-size: 0.9rem;
-            }
-
-            .login-body {
-                padding: 1.5rem 1rem;
-            }
-
-            .login-footer {
-                padding: 1rem;
-            }
-        }
-
-        @media (max-width: 575.98px) {
-            .login-header {
-                padding: 1.5rem 1rem;
-            }
-
-            .login-header h1 {
-                font-size: 1.75rem;
-            }
-
-            .btn-login {
-                padding: 0.75rem 1.25rem;
-                font-size: 0.95rem;
-            }
-        }
-
-        /* Additional enhancements */
-        .input-group-icon {
-            position: relative;
-        }
-
-        .input-group-icon .form-control {
-            padding-left: 3rem;
-        }
-
-        .input-group-icon .icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-            z-index: 10;
-            font-size: 1.25rem;
+            box-shadow: 0 5px 15px rgba(25, 135, 84, 0.3);
         }
 
         .password-toggle {
             position: absolute;
-            right: 1rem;
+            right: 15px;
             top: 50%;
             transform: translateY(-50%);
+            z-index: 5;
             cursor: pointer;
-            color: #6c757d;
-            z-index: 10;
-            font-size: 1.25rem;
+            color: #adb5bd;
             transition: color 0.2s;
         }
 
-        .password-toggle:hover {
-            color: #198754;
+        .password-toggle:hover { color: var(--farm-primary); }
+
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
 
-<div class="container login-container">
+<div class="container">
     <div class="row justify-content-center">
-        <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
-
+        <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4 fade-in">
+            
             <div class="card login-card">
-                
-                <!-- Login Header -->
                 <div class="login-header">
-                    <h1 class="h3 mb-1">Pig Farm</h1>
-                    <p>Management System</p>
+                    <i class="bi bi-piggy-bank-fill farm-logo"></i>
+                    <h2 class="h4 fw-bold mb-0">Pig Farm Manager</h2>
+                    <small class="opacity-75">Secure Staff Portal</small>
                 </div>
 
-                <!-- Login Body -->
-                <div class="login-body">
-
-                    <h4 class="text-center mb-4">Welcome Back!</h4>
-
+                <div class="card-body p-4 p-md-5">
+                    
                     <?php if (!empty($_SESSION['error'])): ?>
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <strong>⚠️ Error!</strong> <?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <div class="alert alert-danger d-flex align-items-center mb-4 small" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div><?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
                         </div>
                     <?php endif; ?>
 
-                    <form method="POST" action="process_login.php" id="loginForm">
+                    <form action="process_login.php" method="POST" id="loginForm">
                         
-                        <!-- Email Field -->
-                        <div class="input-group-icon mb-4">
-                            <div class="form-floating">
-                                <input type="email" 
-                                       class="form-control" 
-                                       id="email" 
-                                       name="email" 
-                                       placeholder="Email address"
-                                       required
-                                       autofocus>
-                                <label for="email">Email Address</label>
-                            </div>
+                        <div class="form-floating mb-3">
+                            <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required autofocus>
+                            <label for="email"><i class="bi bi-envelope me-2"></i>Email Address</label>
                         </div>
 
-                        <!-- Password Field -->
-                        <div class="input-group-icon mb-4 position-relative">
-                            <div class="form-floating">
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="password" 
-                                       name="password" 
-                                       placeholder="Password"
-                                       required>
-                                <label for="password">Password</label>
-                            </div>
+                        <div class="form-floating mb-4 position-relative">
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                            <label for="password"><i class="bi bi-lock me-2"></i>Password</label>
                             <span class="password-toggle" id="togglePassword">
-                                👁️
+                                <i class="bi bi-eye"></i>
                             </span>
                         </div>
 
-                        <!-- Remember Me (Optional) -->
-                        <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4 small">
                             <div class="form-check">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="rememberMe" 
-                                       name="remember">
-                                <label class="form-check-label" for="rememberMe">
-                                    Remember me
-                                </label>
+                                <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
+                                <label class="form-check-label text-muted" for="rememberMe">Remember me</label>
                             </div>
+                            <a href="forgot_password.php" class="text-decoration-none text-success">Forgot?</a>
                         </div>
 
-                        <!-- Login Button -->
-                        <button type="submit" class="btn btn-login w-100">
-                            Login to Farm
+                        <button type="submit" class="btn btn-login w-100 mb-3" id="submitBtn">
+                            Sign In <i class="bi bi-arrow-right-short ms-1"></i>
                         </button>
 
                     </form>
-
                 </div>
-
-                <!-- Login Footer -->
-                <div class="login-footer">
-                    <p>&copy; <?= date('Y') ?> Pig Farm Management System</p>
+                
+                <div class="card-footer bg-light border-0 py-3 text-center">
+                    <p class="text-muted small mb-0">&copy; <?= date('Y') ?> FarmOps Pro. All rights reserved.</p>
                 </div>
-
             </div>
 
         </div>
     </div>
 </div>
 
-<!-- Bootstrap Bundle with Popper -->
-<script src="../assets/js/bootstrap.bundle.min.js"></script>
-
-<!-- Custom Login JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // Password toggle functionality
-    const togglePassword = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password');
-    
-    if (togglePassword && passwordInput) {
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.type === 'password' ? 'text' : 'password';
-            passwordInput.type = type;
-            this.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-    }
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+    const loginForm = document.querySelector('#loginForm');
+    const submitBtn = document.querySelector('#submitBtn');
 
-    // Form validation
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            if (!email || !password) {
-                e.preventDefault();
-                alert('Please fill in all fields');
-                return false;
-            }
-
-            // Basic email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                e.preventDefault();
-                alert('Please enter a valid email address');
-                return false;
-            }
-
-            // Show loading state on button
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
-            }
-        });
-    }
-
-    // Auto-dismiss alerts after 5 seconds
-    const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
-    alerts.forEach(function(alert) {
-        setTimeout(function() {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }, 5000);
+    // Password visibility toggle
+    togglePassword.addEventListener('click', function() {
+        const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+        password.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('bi-eye');
+        this.querySelector('i').classList.toggle('bi-eye-slash');
     });
 
-    // Add animation on input focus
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(function(input) {
-        input.addEventListener('focus', function() {
-            this.parentElement.style.transform = 'scale(1.02)';
-            this.parentElement.style.transition = 'transform 0.2s ease';
-        });
-
-        input.addEventListener('blur', function() {
-            this.parentElement.style.transform = 'scale(1)';
-        });
+    // Submit state handling
+    loginForm.addEventListener('submit', function() {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Authenticating...`;
     });
 });
 </script>
