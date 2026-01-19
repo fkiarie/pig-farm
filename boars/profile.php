@@ -3,43 +3,21 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../includes/header.php';
 
 $id = (int)($_GET['id'] ?? 0);
-if ($id === 0) {
-    header('Location: list.php');
-    exit;
-}
+if ($id === 0) { header('Location: list.php'); exit; }
 
-/*
-|--------------------------------------------------------------------------
-| Boar Details
-|--------------------------------------------------------------------------
-*/
-$boarResult = $conn->query("
-    SELECT * FROM boars WHERE id = $id LIMIT 1
-");
-
-if ($boarResult->num_rows === 0) {
-    header('Location: list.php');
-    exit;
-}
-
+/* Fetch Boar Details */
+$boarResult = $conn->query("SELECT * FROM boars WHERE id = $id LIMIT 1");
+if ($boarResult->num_rows === 0) { header('Location: list.php'); exit; }
 $boar = $boarResult->fetch_assoc();
 
-/*
-|--------------------------------------------------------------------------
-| Statistics
-|--------------------------------------------------------------------------
-*/
+/* Statistics */
 $stats = $conn->query("
     SELECT 
         COUNT(*) as total_servings,
-        COUNT(DISTINCT s.sow_id) as unique_sows,
-        SUM(CASE WHEN s.method = 'Natural' THEN 1 ELSE 0 END) as natural_count,
-        SUM(CASE WHEN s.method = 'AI' THEN 1 ELSE 0 END) as ai_count
-    FROM servings s
-    WHERE s.boar_id = $id
+        COUNT(DISTINCT sow_id) as unique_sows
+    FROM servings WHERE boar_id = $id
 ")->fetch_assoc();
 
-// Count successful farrowings
 $farrowing_stats = $conn->query("
     SELECT 
         COUNT(DISTINCT f.id) as total_farrowings,
@@ -49,39 +27,16 @@ $farrowing_stats = $conn->query("
     WHERE s.boar_id = $id
 ")->fetch_assoc();
 
-/*
-|--------------------------------------------------------------------------
-| Pagination Setup
-|--------------------------------------------------------------------------
-*/
+/* Pagination */
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-$perPage = 10;
+$perPage = 5;
 $offset = ($page - 1) * $perPage;
-
-// Get total count for pagination
-$totalResult = $conn->query("
-    SELECT COUNT(*) as total 
-    FROM servings s
-    WHERE s.boar_id = $id
-");
-$totalRecords = $totalResult->fetch_assoc()['total'];
+$totalRecords = $conn->query("SELECT COUNT(*) as total FROM servings WHERE boar_id = $id")->fetch_assoc()['total'];
 $totalPages = ceil($totalRecords / $perPage);
 
-/*
-|--------------------------------------------------------------------------
-| Serving History with Pagination
-|--------------------------------------------------------------------------
-*/
+/* Serving History */
 $servings = $conn->query("
-    SELECT 
-        s.id as serving_id,
-        s.serving_date,
-        s.method,
-        s.expected_farrowing,
-        sw.tag_no AS sow_tag,
-        sw.status as sow_status,
-        f.id as farrowing_id,
-        f.piglets_alive
+    SELECT s.*, sw.tag_no AS sow_tag, sw.status as sow_status, f.id as farrowing_id, f.piglets_alive
     FROM servings s
     JOIN sows sw ON sw.id = s.sow_id
     LEFT JOIN farrowings f ON f.serving_id = s.id
@@ -91,334 +46,177 @@ $servings = $conn->query("
 ");
 ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <span class="emoji-icon">🐗</span> Boar Profile
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="edit.php?id=<?= $boar['id'] ?>" class="btn btn-outline-primary">
-                <span class="d-none d-sm-inline">✏️ Edit Profile</span>
-                <span class="d-inline d-sm-none">✏️ Edit</span>
-            </a>
-        </div>
-        <a href="list.php" class="btn btn-outline-secondary">
-            <span class="d-none d-sm-inline">← Back to List</span>
-            <span class="d-inline d-sm-none">← Back</span>
-        </a>
-    </div>
-</div>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+<style>
+    .profile-card { border: none; border-radius: 12px; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+    .stat-box { border-radius: 10px; padding: 15px; background: #f8f9fa; border: 1px solid #eee; text-align: center; height: 100%; }
+    .stat-box h3 { font-weight: 700; color: #0d6efd; margin-bottom: 5px; }
+    .stat-box small { color: #6c757d; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px; font-weight: 600; }
+    .bg-soft-success { background-color: #e1f6e1; color: #198754; }
+    .bg-soft-warning { background-color: #fff3cd; color: #856404; }
+    .bg-soft-info { background-color: #cff4fc; color: #055160; }
+    .bg-soft-secondary { background-color: #f0f2f4; color: #495057; }
+    .history-table thead { background-color: #f8f9fa; font-size: 0.8rem; }
+</style>
 
-<!-- Boar Summary Card -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <span class="emoji-icon">ℹ️</span> Basic Information
-        </h5>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0"><i class="bi bi-gender-male me-2"></i>Boar Profile</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a href="list.php">Boars</a></li>
+                    <li class="breadcrumb-item active"><?= htmlspecialchars($boar['name']) ?></li>
+                </ol>
+            </nav>
+        </div>
+        <div class="btn-group shadow-sm">
+            <a href="edit.php?id=<?= $boar['id'] ?>" class="btn btn-white border"><i class="bi bi-pencil me-1"></i> Edit</a>
+            <a href="list.php" class="btn btn-white border"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        </div>
     </div>
-    <div class="card-body">
-        <div class="row g-4">
-            <div class="col-6 col-md-3">
-                <div class="d-flex align-items-start">
-                    <span class="emoji-icon me-2" style="font-size: 1.5rem;">🏷️</span>
-                    <div>
-                        <small class="text-muted d-block">Tag/Name</small>
-                        <strong class="fs-5"><?= htmlspecialchars($boar['name']) ?></strong>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6 col-md-3">
-                <div class="d-flex align-items-start">
-                    <span class="emoji-icon me-2" style="font-size: 1.5rem;">🧬</span>
-                    <div>
-                        <small class="text-muted d-block">Breed</small>
-                        <strong><?= htmlspecialchars($boar['breed']) ?: '—' ?></strong>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6 col-md-3">
-                <div class="d-flex align-items-start">
-                    <span class="emoji-icon me-2" style="font-size: 1.5rem;">
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="card profile-card h-100">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="d-inline-flex p-4 rounded-circle bg-light mb-3 text-primary">
+                            <i class="bi bi-gender-male fs-1"></i>
+                        </div>
+                        <h2 class="h4 mb-1"><?= htmlspecialchars($boar['name']) ?></h2>
                         <?php
-                        $statusIcon = match($boar['status']) {
-                            'Active' => '✅',
-                            'Resting' => '😴',
-                            'Sold' => '💰',
-                            'Inactive' => '❌',
-                            default => '•'
-                        };
-                        echo $statusIcon;
+                            $statusClass = match($boar['status']) {
+                                'Active' => 'bg-soft-success',
+                                'Resting' => 'bg-soft-warning',
+                                'Sold' => 'bg-soft-secondary',
+                                'Inactive' => 'bg-soft-danger',
+                                default => 'bg-light text-dark'
+                            };
                         ?>
-                    </span>
-                    <div>
-                        <small class="text-muted d-block">Status</small>
-                        <?php
-                        $badgeClass = match($boar['status']) {
-                            'Active' => 'success',
-                            'Resting' => 'warning',
-                            'Sold' => 'secondary',
-                            'Inactive' => 'danger',
-                            default => 'secondary'
-                        };
-                        ?>
-                        <span class="badge bg-<?= $badgeClass ?>">
-                            <?= $boar['status'] ?>
+                        <span class="badge <?= $statusClass ?> fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-dot"></i> <?= $boar['status'] ?>
                         </span>
                     </div>
+
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted small">Breed</span>
+                            <span class="fw-bold"><?= htmlspecialchars($boar['breed']) ?: '—' ?></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted small">Added to Farm</span>
+                            <span class="fw-bold"><?= date('d M Y', strtotime($boar['created_at'])) ?></span>
+                        </li>
+                    </ul>
+
+                    <?php if ($boar['notes']): ?>
+                    <div class="mt-4 p-3 bg-light rounded border-start border-primary border-4">
+                        <small class="text-muted d-block mb-1 fw-bold text-uppercase">Breeder Notes</small>
+                        <p class="mb-0 small text-dark"><?= nl2br(htmlspecialchars($boar['notes'])) ?></p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
-            
-            <div class="col-6 col-md-3">
-                <div class="d-flex align-items-start">
-                    <span class="emoji-icon me-2" style="font-size: 1.5rem;">📅</span>
-                    <div>
-                        <small class="text-muted d-block">Date Added</small>
-                        <strong><?= date('d M Y', strtotime($boar['created_at'])) ?></strong>
-                        <small class="text-muted d-block">
-                            <?php
-                            $addedDate = new DateTime($boar['created_at']);
-                            $today = new DateTime();
-                            $daysInFarm = $today->diff($addedDate)->days;
-                            echo $daysInFarm . ' days in farm';
-                            ?>
-                        </small>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <small>Total Servings</small>
+                        <h3><?= $stats['total_servings'] ?></h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <small>Unique Sows</small>
+                        <h3><?= $stats['unique_sows'] ?></h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <small>Farrowings</small>
+                        <h3><?= $farrowing_stats['total_farrowings'] ?></h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-box">
+                        <small>Total Piglets</small>
+                        <h3><?= $farrowing_stats['total_piglets'] ?></h3>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <?php if ($boar['notes']): ?>
-            <hr class="my-4">
-            <div class="d-flex align-items-start">
-                <span class="emoji-icon me-2" style="font-size: 1.5rem;">📝</span>
-                <div class="flex-grow-1">
-                    <strong class="d-block mb-2">Notes</strong>
-                    <p class="mb-0 text-muted"><?= nl2br(htmlspecialchars($boar['notes'])) ?></p>
+            <div class="card profile-card">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold text-muted"><i class="bi bi-calendar-check me-2"></i>Serving History</h6>
                 </div>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
+                <div class="table-responsive">
+                    <table class="table history-table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Sow</th>
+                                <th class="d-none d-md-table-cell">Method</th>
+                                <th class="text-end">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if ($servings->num_rows === 0): ?>
+                                <tr><td colspan="4" class="text-center py-4 text-muted small">No servings recorded.</td></tr>
+                            <?php else: ?>
+                                <?php while ($row = $servings->fetch_assoc()): ?>
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold small"><?= date('d M Y', strtotime($row['serving_date'])) ?></div>
+                                        <small class="text-muted"><?= $row['method'] ?></small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-gender-female text-danger me-2"></i>
+                                            <span class="fw-bold"><?= htmlspecialchars($row['sow_tag']) ?></span>
+                                        </div>
+                                    </td>
+                                    <td class="d-none d-md-table-cell">
+                                        <span class="badge bg-light text-dark border"><?= $row['method'] ?></span>
+                                    </td>
+                                    <td class="text-end">
+                                        <?php if ($row['farrowing_id']): ?>
+                                            <span class="badge bg-soft-success border border-success border-opacity-10">
+                                                <i class="bi bi-check-circle-fill me-1"></i><?= $row['piglets_alive'] ?> Piglets
+                                            </span>
+                                        <?php elseif ($row['sow_status'] === 'Pregnant'): ?>
+                                            <span class="badge bg-soft-warning border border-warning border-opacity-10">Pregnant</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-soft-secondary border border-secondary border-opacity-10">Completed</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endwhile; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
 
-<!-- Statistics Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $stats['total_servings'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">📋</span> Total Servings
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $stats['unique_sows'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐷</span> Unique Sows
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $farrowing_stats['total_farrowings'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐣</span> Farrowings
-                </p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-6 col-md-3">
-        <div class="card stat-card">
-            <div class="card-body">
-                <h3 class="mb-2"><?= $farrowing_stats['total_piglets'] ?></h3>
-                <p class="text-muted mb-0">
-                    <span class="emoji-icon">🐽</span> Total Offspring
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Serving History -->
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><span class="emoji-icon">📅</span> Serving History</span>
-        <span class="badge bg-secondary"><?= $totalRecords ?> total</span>
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>Serving Date</th>
-                    <th>
-                        <span class="emoji-icon">🐷</span> Sow
-                    </th>
-                    <th class="d-none d-md-table-cell">Method</th>
-                    <th class="d-none d-lg-table-cell">Expected Farrowing</th>
-                    <th class="d-none d-xl-table-cell">Result</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if ($servings->num_rows === 0): ?>
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="text-muted">
-                                <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📅</span>
-                                <h5>No serving records yet</h5>
-                                <p class="mb-3">This boar hasn't been used for any servings.</p>
-                                <a href="../breeding/serve.php" class="btn btn-success">+ Record First Serving</a>
-                            </div>
-                        </td>
-                    </tr>
-                <?php else: ?>
-                    <?php while ($row = $servings->fetch_assoc()): ?>
-                        <?php
-                        $servingDate = new DateTime($row['serving_date']);
-                        $today = new DateTime();
-                        $daysSince = $today->diff($servingDate)->days;
-                        ?>
-                        <tr>
-                            <td>
-                                <div>
-                                    <strong class="d-block"><?= date('d M Y', strtotime($row['serving_date'])) ?></strong>
-                                    <small class="text-muted"><?= $daysSince ?> days ago</small>
-                                </div>
-                            </td>
-                            
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <span class="emoji-icon me-2">🐷</span>
-                                    <div>
-                                        <strong><?= htmlspecialchars($row['sow_tag']) ?></strong>
-                                        <small class="text-muted d-md-none d-block mt-1">
-                                            <?= $row['method'] === 'Natural' ? '🐗 Natural' : '🔬 AI' ?>
-                                        </small>
-                                    </div>
-                                </div>
-                            </td>
-                            
-                            <td class="d-none d-md-table-cell">
-                                <?php
-                                $methodIcon = $row['method'] === 'Natural' ? '🐗' : '🔬';
-                                $methodClass = $row['method'] === 'Natural' ? 'success' : 'info';
-                                ?>
-                                <span class="badge bg-<?= $methodClass ?>">
-                                    <?= $methodIcon ?> <?= $row['method'] ?>
-                                </span>
-                            </td>
-                            
-                            <td class="d-none d-lg-table-cell">
-                                <div>
-                                    <span class="d-block"><?= date('d M Y', strtotime($row['expected_farrowing'])) ?></span>
-                                    <?php
-                                    $expectedDate = new DateTime($row['expected_farrowing']);
-                                    $daysUntil = $today->diff($expectedDate)->days;
-                                    $isPast = $today > $expectedDate;
-                                    ?>
-                                    <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                        <small class="<?= $isPast ? 'text-danger' : 'text-muted' ?>">
-                                            <?= $isPast ? 'Overdue' : $daysUntil . ' days' ?>
-                                        </small>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            
-                            <td class="d-none d-xl-table-cell">
-                                <?php if ($row['farrowing_id']): ?>
-                                    <span class="badge bg-success">
-                                        ✓ <?= $row['piglets_alive'] ?> piglets
-                                    </span>
-                                <?php elseif ($row['sow_status'] === 'Pregnant'): ?>
-                                    <span class="badge bg-warning">
-                                        ⏳ Pending
-                                    </span>
-                                <?php else: ?>
-                                    <span class="text-muted">—</span>
-                                <?php endif; ?>
-                            </td>
-                            
-                            <td>
-                                <?php if ($row['sow_status'] === 'Pregnant'): ?>
-                                    <span class="badge bg-warning">🤰 Pregnant</span>
-                                <?php elseif ($row['farrowing_id']): ?>
-                                    <span class="badge bg-success">✅ Completed</span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary">Completed</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endwhile; ?>
+                <?php if ($totalPages > 1): ?>
+                <div class="card-footer bg-white">
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?id=<?= $id ?>&page=<?= $page - 1 ?>"><i class="bi bi-chevron-left"></i></a>
+                            </li>
+                            <li class="page-item disabled"><span class="page-link text-dark"><?= $page ?> / <?= $totalPages ?></span></li>
+                            <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?id=<?= $id ?>&page=<?= $page + 1 ?>"><i class="bi bi-chevron-right"></i></a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
                 <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <?php if ($totalPages > 1): ?>
-    <div class="card-footer">
-        <nav aria-label="Serving history pagination">
-            <ul class="pagination pagination-sm justify-content-center mb-0">
-                
-                <!-- Previous Button -->
-                <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-                    <a class="page-link" href="?id=<?= $id ?>&page=<?= $page - 1 ?>" aria-label="Previous">
-                        <span aria-hidden="true">«</span>
-                    </a>
-                </li>
-
-                <?php
-                // Smart pagination: show first, last, current and nearby pages
-                $range = 2; // Pages to show on each side of current page
-                
-                for ($i = 1; $i <= $totalPages; $i++):
-                    // Show first page, last page, current page and nearby pages
-                    if ($i == 1 || $i == $totalPages || ($i >= $page - $range && $i <= $page + $range)):
-                ?>
-                    <li class="page-item <?= $i == $page ? 'active' : '' ?>">
-                        <a class="page-link" href="?id=<?= $id ?>&page=<?= $i ?>">
-                            <?= $i ?>
-                        </a>
-                    </li>
-                <?php
-                    // Show ellipsis
-                    elseif ($i == $page - $range - 1 || $i == $page + $range + 1):
-                ?>
-                    <li class="page-item disabled">
-                        <span class="page-link">...</span>
-                    </li>
-                <?php
-                    endif;
-                endfor;
-                ?>
-
-                <!-- Next Button -->
-                <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">
-                    <a class="page-link" href="?id=<?= $id ?>&page=<?= $page + 1 ?>" aria-label="Next">
-                        <span aria-hidden="true">»</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-        <div class="text-center mt-2">
-            <small class="text-muted">
-                Showing <?= min($offset + 1, $totalRecords) ?> to <?= min($offset + $perPage, $totalRecords) ?> of <?= $totalRecords ?> servings
-            </small>
+            </div>
         </div>
     </div>
-    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

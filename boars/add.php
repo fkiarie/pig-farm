@@ -2,45 +2,95 @@
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<h2 class="mb-3">➕ Add Boar</h2>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST" action="store.php">
+<style>
+    .form-card { border: none; border-radius: 12px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); }
+    .form-label { font-weight: 600; color: #495057; font-size: 0.9rem; }
+    .input-group-text { background-color: #f8f9fa; color: #6c757d; }
+    .btn-save { padding: 0.6rem 2rem; border-radius: 8px; font-weight: 600; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: #0d6efd; margin-bottom: 1.5rem; display: flex; align-items: center; }
+</style>
 
-            <div class="mb-3">
-                <label class="form-label">Name *</label>
-                <input type="text" name="name" class="form-control" required>
+<div class="container-fluid py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="list.php" class="text-decoration-none">Boars</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add New Boar</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card form-card">
+                <div class="card-body p-4">
+                    
+                    <div class="section-title">
+                        <i class="bi bi-plus-circle-fill me-2"></i> Boar Registration
+                    </div>
+
+                    <form method="POST" action="store.php">
+                        <div class="row g-3">
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Name / Tag Number <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                                    <input type="text" name="name" class="form-control" placeholder="e.g. Apollo" required>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Breed</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-info-circle"></i></span>
+                                    <input type="text" name="breed" class="form-control" placeholder="e.g. Duroc">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Date of Birth</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                                    <input type="date" name="date_of_birth" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Current Status</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-activity"></i></span>
+                                    <select name="status" class="form-select">
+                                        <option value="Active" selected>Active</option>
+                                        <option value="Resting">Resting</option>
+                                        <option value="Sold">Sold</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Notes</label>
+                                <textarea name="notes" class="form-control" rows="4" placeholder="Enter physical traits, performance history, or source details..."></textarea>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <hr class="my-4 text-muted opacity-25">
+                                <div class="d-flex flex-column flex-md-row gap-2">
+                                    <button type="submit" class="btn btn-primary btn-save shadow-sm">
+                                        <i class="bi bi-save me-1"></i> Save Boar Record
+                                    </button>
+                                    <a href="list.php" class="btn btn-outline-secondary btn-save text-center">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label class="form-label">Breed</label>
-                <input type="text" name="breed" class="form-control">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Date of Birth</label>
-                <input type="date" name="date_of_birth" class="form-control">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Status</label>
-                <select name="status" class="form-select">
-                    <option value="Active">Active</option>
-                    <option value="Resting">Resting</option>
-                    <option value="Sold">Sold</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Notes</label>
-                <textarea name="notes" class="form-control" rows="3"></textarea>
-            </div>
-
-            <button class="btn btn-success">Save</button>
-            <a href="list.php" class="btn btn-secondary">Cancel</a>
-
-        </form>
+        </div>
     </div>
 </div>
 
