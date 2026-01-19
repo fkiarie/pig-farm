@@ -52,7 +52,7 @@ $res = $conn->query("SELECT * FROM servings WHERE id = $id");
 $current = $res->fetch_assoc();
 
 if (!$current) {
-    header("Location: index.php?error=not_found");
+    header("Location: list.php?error=not_found");
     exit();
 }
 
