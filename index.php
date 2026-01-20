@@ -22,8 +22,8 @@ $totalPiglets = $conn->query("
     WHERE YEAR(farrowing_date) = YEAR(CURDATE())
 ")->fetch_assoc()['total'];
 
-// Nursing sows
-$nursingSows = $conn->query("SELECT COUNT(*) total FROM sows WHERE status='Nursing'")->fetch_assoc()['total'];
+// Lactating sows
+$nursingSows = $conn->query("SELECT COUNT(*) total FROM sows WHERE status='Lactating'")->fetch_assoc()['total'];
 
 // Active sows (ready for breeding)
 $activeSows = $conn->query("SELECT COUNT(*) total FROM sows WHERE status='Active'")->fetch_assoc()['total'];
