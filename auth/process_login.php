@@ -5,11 +5,11 @@ require_once __DIR__ . '/../config/db.php';
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';
 
-if (empty($email) || empty($password)) {
-    $_SESSION['error'] = 'Email and password are required';
-    header('Location: login.php');
-    exit;
-}
+ if (empty($email) || empty($password)) {
+     $_SESSION['error'] = 'Email and password are required';
+     header('Location: login.php');
+     exit;
+ }
 
 $sql = "SELECT id, name, email, password, role, is_active 
         FROM users WHERE email = ? LIMIT 1";

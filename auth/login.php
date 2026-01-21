@@ -2,7 +2,7 @@
 session_start(); 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header("Location: ../dashboard/index.php");
+    header("Location: ../index.php");
     exit;
 }
 ?>
@@ -122,7 +122,7 @@ if (isset($_SESSION['user_id'])) {
                         </div>
                     <?php endif; ?>
 
-                    <form action="process_login.php" method="POST" id="loginForm">
+                    <form action="process_login" method="POST" id="loginForm">
                         
                         <div class="form-floating mb-3">
                             <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required autofocus>
@@ -153,7 +153,7 @@ if (isset($_SESSION['user_id'])) {
                 </div>
                 
                 <div class="card-footer bg-light border-0 py-3 text-center">
-                    <p class="text-muted small mb-0">&copy; <?= date('Y') ?> FarmOps Pro. All rights reserved.</p>
+                    <p class="text-muted small mb-0">&copy; <?= date('Y') ?> Vemico Tech. All rights reserved.</p>
                 </div>
             </div>
 
