@@ -122,7 +122,7 @@ if (isset($_SESSION['user_id'])) {
                         </div>
                     <?php endif; ?>
 
-                    <form action="process_login" method="POST" id="loginForm">
+                    <form action="process_login.php" method="POST" id="loginForm">
                         
                         <div class="form-floating mb-3">
                             <input type="email" class="form-control" id="email" name="email" placeholder="name@example.com" required autofocus>
