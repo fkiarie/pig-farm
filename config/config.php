@@ -1,2 +1,2 @@
 <?php
-define('BASE_URL', 'https://farm.vemicotech.com');
+define('BASE_URL', '/pig-farm');

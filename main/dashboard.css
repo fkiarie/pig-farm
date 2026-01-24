@@ -99,7 +99,42 @@ table {
 .form-select {
   font-size: 0.875rem;
 }
+/* Activity Timeline Styles */
+.activity-timeline {
+    position: relative;
+}
 
+.activity-item {
+    position: relative;
+    padding-left: 0;
+}
+
+.activity-dot {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #198754;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 2px #198754;
+    z-index: 1;
+}
+
+.activity-item::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 15px;
+    bottom: -15px;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.activity-item:last-child::before {
+    display: none;
+}
 /* Mobile styles (up to 767px) */
 @media (max-width: 767.98px) {
   body {
